@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/conf/demosandbox" mode="merge"/>
+    <filter root="/content/demosandbox" mode="merge"/>
+    <filter root="/content/dam/demosandbox" mode="merge">
+        <exclude pattern="/content/dam/demosandbox(/.*)?"/>
+        <include pattern="/content/dam/demosandbox/jcr:content(/.*)?"/>
+    </filter>
+    <filter root="/content/dam/demosandbox/asset.jpg" mode="merge"/>
+    <filter root="/content/experience-fragments/demosandbox" mode="merge"/>
+    <filter root="/content/dam/formsanddocuments-themes/demosandbox" mode="merge"/>
+    <filter root="/content/dam/formsanddocuments-fdm/demosandbox" mode="merge"/>
+    <filter root="/content/dam/demosandbox/sample_logo.png" mode="merge"/>
+    <filter root="/content/dam/demosandbox/sample_terms.png" mode="merge"/>
+    <filter root="/content/dam/demosandbox/wknd_logo.png" mode="merge"/>
+</workspaceFilter>

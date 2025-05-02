@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/apps/demosandbox/clientlibs"/>
+    <filter root="/apps/demosandbox/components"/>
+    <filter root="/apps/demosandbox/i18n"/>
+    <filter root="/apps/fd/af/themes" mode="merge"/>
+
+</workspaceFilter>
