@@ -1,0 +1,5 @@
+{
+    "excluded.paths": [
+        "/saml_login"
+    ]
+}

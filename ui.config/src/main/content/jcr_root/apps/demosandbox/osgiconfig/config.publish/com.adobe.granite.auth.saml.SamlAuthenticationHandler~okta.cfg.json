@@ -12,7 +12,7 @@
     "defaultGroups": ["everyone"],
     "nameIdFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
     "clockTolerance": 60,
-    "assertionConsumerServiceURL": "https://publish-p154856-e1944736.adobeaemcloud.com/content/demo/en/saml_login",
+    "assertionConsumerServiceURL": "https://publish-p154856-e1944736.adobeaemcloud.com/saml_login",
     "synchronizeAttributes": [
         "firstName=profile/givenName",
         "lastName=profile/familyName",
