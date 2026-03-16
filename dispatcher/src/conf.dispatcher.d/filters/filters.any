@@ -7,20 +7,10 @@
 $include "./default_filters.any"
 
 # Allow components JSON model
-/0101 { /type "allow" /extension "json" /selectors "model" /path "/content/*" }
-
-# Allow manifest.webmanifest files located in the content
-/0102 { /type "allow" /extension "webmanifest" /path "/content/*/manifest" }
-
-
-# Allow components JSON model
-/0100 { /type "allow" /extension "json" /selectors "model" /path "/content/*" }
-
-# Allow manifest.webmanifest files located in the content
-/0101 { /type "allow" /extension "webmanifest" /path "/content/*/manifest" }
+/0070 { /type "allow" /extension "json" /selectors "model" /path "/content/*" }
 
 # Allow home page access
-/0102 { /type "allow" /method "GET" /path "/content/demo/en/home.html" }
+/0072 { /type "allow" /method "GET" /path "/content/demo/en/home.html" }
 
 # User profile retrieval (HTTP GET /home/users/ira.profile.json)
 /0201 { /type "allow" /method "GET" /path "/home/users/*" /extension '(json|png)' }
@@ -39,9 +29,9 @@ $include "./default_filters.any"
 # Asset Rendition downloads
 /0401 { /type "allow" /method "POST" /path "/content/*" /selectors "download-asset-renditions" /extension "zip" }
 
-# ALlow SAML
+# Allow SAML
 /0501 { /type "allow" /method "POST" /url "*/saml_login"}
 
 
-#A Allow Dynamic Media
+# Allow Dynamic Media
 /0503 { /type "allow" /path "/adobe/dynamicmedia/deliver/*"  }
