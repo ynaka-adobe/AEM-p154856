@@ -1,0 +1,17 @@
+{
+    "allow.empty": false,
+    "allow.hosts": [
+        "trial-5076725.okta.com",
+        "localhost"
+    ],
+    "allow.hosts.regexp": [
+        "trial-5076725\\.okta\\.com"
+    ],
+    "filter.methods": [
+        "POST",
+        "PUT",
+        "DELETE",
+        "COPY",
+        "MOVE"
+    ]
+}

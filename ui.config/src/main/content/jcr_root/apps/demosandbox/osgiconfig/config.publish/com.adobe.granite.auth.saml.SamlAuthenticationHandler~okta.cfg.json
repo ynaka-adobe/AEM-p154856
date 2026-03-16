@@ -1,0 +1,21 @@
+{
+    "path": ["/content/demo/en/home.html"],
+    "service.ranking": 5002,
+    "idpUrl": "https://trial-5076725.okta.com/app/trial-5076725_assetsharedev_1/exk1111gb2iOAjAaA698/sso/saml",
+    "idpCertAlias": "certAlias___1773626908738",
+    "serviceProviderEntityId": "https://publish-p154856-e1944736.adobeaemcloud.com",
+    "defaultRedirectUrl": "https://publish-p154856-e1944736.adobeaemcloud.com/content/demo/en/home.html",
+    "userIDAttribute": "email",
+    "useEncryption": false,
+    "createUser": true,
+    "addGroupMemberships": true,
+    "defaultGroups": ["everyone"],
+    "nameIdFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+    "clockTolerance": 60,
+    "assertionConsumerServiceURL": "https://publish-p154856-e1944736.adobeaemcloud.com/content/demo/en/saml_login",
+    "synchronizeAttributes": [
+        "firstName=profile/givenName",
+        "lastName=profile/familyName",
+        "email=profile/email"
+    ]
+}
