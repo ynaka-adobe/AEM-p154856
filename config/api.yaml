@@ -1,7 +1,7 @@
 kind: "API"
 version: "1.0"
 metadata:
-  envTypes: ["stage"]
+  envTypes: ["stage","dev","prod"]
 data:
   allowedClientIDs:
     author:
