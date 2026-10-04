@@ -1,0 +1,8 @@
+kind: "API"
+version: "1.0"
+metadata:
+  envTypes: ["stage"]
+data:
+  allowedClientIDs:
+    author:
+      - "cf778cdcea774f518833f22b5bd4c5da"
