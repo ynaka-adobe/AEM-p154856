@@ -1,0 +1,9 @@
+{
+  "alloworigin": ["https://toyotafinancial.ynaka-adobe.com"],
+  "alloworiginregexp": ["https://.*--toyotafinancial--ynaka-adobe\\.aem\\.(page|live)"],
+  "allowedpaths": ["/adobe/forms/.*", "/content/forms/.*"],
+  "supportedmethods": ["GET", "HEAD", "POST", "OPTIONS"],
+  "supportedheaders": ["Origin", "Accept", "Content-Type", "x-adobe-form-hostname"],
+  "supportscredentials": false,
+  "maxage:Integer": 1800
+}

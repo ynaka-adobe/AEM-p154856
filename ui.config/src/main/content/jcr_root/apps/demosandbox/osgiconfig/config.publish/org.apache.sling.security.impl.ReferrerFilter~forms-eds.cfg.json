@@ -1,0 +1,5 @@
+{
+  "allow.empty": false,
+  "allow.hosts": ["toyotafinancial.ynaka-adobe.com"],
+  "allow.hosts.regexp": ["https://.*--toyotafinancial--ynaka-adobe\\.aem\\.(page|live)"]
+}
