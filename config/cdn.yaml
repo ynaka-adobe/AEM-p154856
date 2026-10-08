@@ -5,21 +5,52 @@ version: "1"
 data:
   originSelectors:
     rules:
+      - name: route-3m-mmm
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm(/|$)" }
+        action:
+          type: selectOrigin
+          originName: 3m-www
+          skipCache: true
       - name: route-persona-home
         when:
           allOf:
             - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
             - { reqProperty: path, equals: "/" }
         action: { type: selectAemOrigin, originName: edgefunction-my-edge-function, skipCache: true }
+    origins:
+      - name: 3m-www
+        domain: www.3m.com
+        forwardHost: false
+        forwardCookie: true
+        forwardAuthorization: true
   requestTransformations:
     rules:
+      - name: normalize-3m-mmm-root
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm$" }
+        actions:
+          - type: transform
+            reqProperty: path
+            op: replace
+            match: '$'
+            replacement: "/"
       # Legacy AEM URLs: serve /us/en/page.html from the EDS page /us/en/page,
       # keeping .html in the browser address bar (no redirect).
       # Skips EDS fragments (*.plain.html) and code paths.
       - name: serve-html-extension
         when:
           allOf:
-            - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
+                - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - anyOf:
+              - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
+              - { reqProperty: originalPath, doesNotMatch: "^/([a-z]{2}/)?mmm(/|$)" }
             - { reqProperty: path, matches: "\\.html$" }
             - { reqProperty: path, doesNotMatch: "\\.plain\\.html$" }
             - { reqProperty: path, doesNotMatch: "^/(404|head)\\.html$" }
