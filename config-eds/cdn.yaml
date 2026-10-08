@@ -5,6 +5,20 @@ version: "1"
 data:
   originSelectors:
     rules:
+      # /mmm/login (and /<lang>/mmm/login) is a demo alias for 3M's B2B
+      # ordering-portal login, which lives on a different subdomain/path
+      # than www.3m.com. Must be matched (and listed) before the generic
+      # route-3m-mmm rule below, since that rule's path pattern would
+      # otherwise also match "/mmm/login" and send it to www.3m.com instead.
+      - name: route-3m-mmm-login
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm/login/?$" }
+        action:
+          type: selectOrigin
+          originName: order-3m
+          skipCache: true
       - name: route-3m-mmm
         when:
           allOf:
@@ -49,8 +63,26 @@ data:
         forwardHost: false
         forwardCookie: true
         forwardAuthorization: true
+      - name: order-3m
+        domain: order.3m.com
+        forwardHost: false
+        forwardCookie: true
+        forwardAuthorization: true
   requestTransformations:
     rules:
+      # Rewrite our /mmm/login alias to 3M's real B2B ordering-portal login
+      # path before forwarding to the order-3m origin above.
+      - name: rewrite-3m-mmm-login
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm/login/?$" }
+        actions:
+          - type: transform
+            reqProperty: path
+            op: replace
+            match: "^/([a-z]{2}/)?mmm/login/?$"
+            replacement: "/store/bComUSSite/en_US/login"
       # The /mmm (or /<lang>/mmm) path is only a routing alias on our side;
       # www.3m.com has no such path, so forwarding it verbatim returns 3M's
       # own 404 page. Rewrite it to "/" so the real 3m.com homepage loads.
