@@ -12,13 +12,20 @@ repository's outdated README.
 
 ## Configuration
 
-Cloud Manager configuration lives in this repository's root `config` directory:
+EDS configuration lives in this repository's root `config-eds` directory:
 
-- `../config/edgeFunctions.yaml` declares `my-edge-function`.
-- `../config/cdn.yaml` routes only the homepage (`/`) on the exact domain
+- `../config-eds/edgeFunctions.yaml` declares `my-edge-function`.
+- `../config-eds/cdn.yaml` routes only the homepage (`/`) on the exact domain
   `dupont.ynaka-adobe.com` to this function, alongside the existing Toyota
   Financial `.html` rewrite. Other paths and domains do not select this function
   through this rule. All four personas remain available on the homepage.
+
+The CDN configuration also includes 3M's HTML rewrite and domain-scoped `/mmm`
+reverse proxy, with optional two-letter language prefixes.
+
+The existing `../config/api.yaml` remains for an AEM environment configuration
+pipeline. Do not include it in an EDS pipeline: an `EDGE` environment rejects
+the `API` configuration kind.
 
 The runtime and `fastly.toml` retain DuPont's source settings:
 
@@ -58,7 +65,7 @@ aio login
 aio aem edge-functions setup
 ```
 
-Point the Cloud Manager configuration pipeline at the root `config` directory
+Point the Cloud Manager EDS configuration pipeline at `/config-eds`, not `/config`,
 and deploy the CDN and function declaration. From this directory, use the
 authenticated Edge Functions CLI to build and deploy the declared function:
 
