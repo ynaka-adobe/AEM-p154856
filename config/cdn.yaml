@@ -14,6 +14,29 @@ data:
           type: selectOrigin
           originName: 3m-www
           skipCache: true
+      # www.3m.com pages reference these asset paths as root-relative URLs
+      # (e.g. /en_US/..., /3m_theme_assets/...). Once the browser is on
+      # 3m.ynaka-adobe.com (from the route-3m-mmm proxy above), those
+      # root-relative requests land back on this domain instead of
+      # www.3m.com, so they must also be sent to the 3m-www origin.
+      - name: route-3m-mmm-assets
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: path, matches: "^/en_US/" }
+                - { reqProperty: path, matches: "^/3m_theme_assets/" }
+                - { reqProperty: path, matches: "^/3M/" }
+                - { reqProperty: path, matches: "^/etc\\.clientlibs/" }
+                - { reqProperty: path, matches: "^/etc/" }
+                - { reqProperty: path, matches: "^/content/dam/" }
+                - { reqProperty: path, matches: "^/wps/" }
+                - { reqProperty: path, matches: "^/akam/" }
+                - { reqProperty: path, equals: "/favicon.ico" }
+        action:
+          type: selectOrigin
+          originName: 3m-www
+          skipCache: true
       - name: route-persona-home
         when:
           allOf:
@@ -28,16 +51,19 @@ data:
         forwardAuthorization: true
   requestTransformations:
     rules:
+      # The /mmm (or /<lang>/mmm) path is only a routing alias on our side;
+      # www.3m.com has no such path, so forwarding it verbatim returns 3M's
+      # own 404 page. Rewrite it to "/" so the real 3m.com homepage loads.
       - name: normalize-3m-mmm-root
         when:
           allOf:
             - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
-            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm$" }
+            - { reqProperty: originalPath, matches: "^/([a-z]{2}/)?mmm/?$" }
         actions:
           - type: transform
             reqProperty: path
             op: replace
-            match: '$'
+            match: "^/([a-z]{2}/)?mmm/?$"
             replacement: "/"
       # Legacy AEM URLs: serve /us/en/page.html from the EDS page /us/en/page,
       # keeping .html in the browser address bar (no redirect).
