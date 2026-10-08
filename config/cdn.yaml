@@ -1,0 +1,32 @@
+# Adobe Managed CDN configuration, deployed by a Cloud Manager
+# Edge Delivery Configuration Pipeline (not used by aem.live itself).
+kind: "CDN"
+version: "1"
+data:
+  originSelectors:
+    rules:
+      - name: route-persona-home
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
+            - { reqProperty: path, equals: "/" }
+        action: { type: selectAemOrigin, originName: edgefunction-my-edge-function, skipCache: true }
+  requestTransformations:
+    rules:
+      # Legacy AEM URLs: serve /us/en/page.html from the EDS page /us/en/page,
+      # keeping .html in the browser address bar (no redirect).
+      # Skips EDS fragments (*.plain.html) and code paths.
+      - name: serve-html-extension
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
+            - { reqProperty: path, matches: "\\.html$" }
+            - { reqProperty: path, doesNotMatch: "\\.plain\\.html$" }
+            - { reqProperty: path, doesNotMatch: "^/(404|head)\\.html$" }
+            - { reqProperty: path, doesNotMatch: "^/(blocks|scripts|styles|tools|plugins|deps|ue|icons|fonts|workers|\\.well-known|well-known)/" }
+        actions:
+          - type: transform
+            reqProperty: path
+            op: replace
+            match: '\.html$'
+            replacement: ""

@@ -1,0 +1,25 @@
+# Fastly Compute package for DuPont persona edge decisioning.
+authors = []
+cloned_from = "https://github.com/fastly/compute-starter-kit-javascript-empty"
+description = "DuPont AEM Edge Functions — persona decisioning"
+language = "javascript"
+manifest_version = 3
+name = "dupont-edge-functions"
+service_id = ""
+
+[scripts]
+  build = "npm run build"
+  post_init = "npm install"
+
+[local_server]
+  [local_server.backends]
+    [local_server.backends.origin]
+      url = "https://main--dupont--ynaka-adobe.aem.live"
+    [local_server.backends.target]
+      url = "https://acsmarketing.tt.omtrdc.net"
+
+  [local_server.config_stores]
+    [local_server.config_stores.config_default]
+      format = "inline-toml"
+    [local_server.config_stores.config_default.contents]
+      LOG_LEVEL = "debug"
