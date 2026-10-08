@@ -51,6 +51,20 @@ data:
           type: selectOrigin
           originName: 3m-www
           skipCache: true
+      # bCom (order.3m.com) serves its own CSS/JS/image assets and sub-pages
+      # under root-relative /store/... paths. Once proxied onto
+      # 3m.ynaka-adobe.com (via route-3m-mmm-login above), those requests
+      # must also be routed to the order-3m origin instead of falling
+      # through to the EDS origin.
+      - name: route-3m-order-assets
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "3m.ynaka-adobe.com" }
+            - { reqProperty: path, matches: "^/store/" }
+        action:
+          type: selectOrigin
+          originName: order-3m
+          skipCache: true
       - name: route-persona-home
         when:
           allOf:
