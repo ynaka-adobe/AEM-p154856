@@ -71,6 +71,15 @@ data:
             - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
             - { reqProperty: path, equals: "/" }
         action: { type: selectAemOrigin, originName: edgefunction-my-edge-function, skipCache: true }
+      # xsc-demo Closed User Groups: every page/fragment/media request on
+      # xsc-demo.ynaka-adobe.com goes through the xsc-demo-cug edge function,
+      # which enforces Okta login. Only static code paths bypass it.
+      - name: route-xsc-demo-cug
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
+            - { reqProperty: path, doesNotMatch: "^/(blocks|scripts|styles|fonts|icons)/" }
+        action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
     origins:
       - name: 3m-www
         domain: www.3m.com
