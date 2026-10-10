@@ -41,6 +41,18 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 > *before* running the config pipeline. A missing secret fails the deploy for
 > **every** site on this CDN.
 
+### Sandbox programs (p154856)
+
+Sandbox programs have no config or secret stores, so the function falls back to:
+
+- built-in defaults for `XSC_OKTA_ISSUER` / `XSC_OKTA_CLIENT_ID` (see `src/index.js`);
+- values injected at build time from a gitignored `.env` (copy `.env.example`):
+  `npm run build` runs `scripts/gen-build-env.mjs`, which writes any `XSC_*`
+  values to `src/generated/build-env.js`.
+
+These values are embedded in the deployed package. Store values still take
+priority when the stores exist.
+
 ## Okta setup
 
 1. Create an **OIDC Web Application** app integration (grant type: Authorization Code).
