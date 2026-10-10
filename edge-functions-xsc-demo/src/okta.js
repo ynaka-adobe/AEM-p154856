@@ -159,7 +159,7 @@ export async function callback(request, env) {
       status: 502, headers: { 'set-cookie': clearTx },
     });
   }
-  const { id_token: idToken } = await tokenResp.json();
+  const { id_token: idToken, access_token: accessToken } = await tokenResp.json();
 
   let claims;
   try {
@@ -170,7 +170,23 @@ export async function callback(request, env) {
     });
   }
 
-  const groupsClaim = claims[env.OKTA_GROUPS_CLAIM || 'groups'];
+  const claimName = env.OKTA_GROUPS_CLAIM || 'groups';
+  let groupsClaim = claims[claimName];
+  // Okta can omit groups from the ID token in the code flow; /userinfo has them.
+  if (!Array.isArray(groupsClaim) && accessToken && config.userinfo_endpoint) {
+    try {
+      const info = await fetch(config.userinfo_endpoint, {
+        ...noCache(),
+        headers: { authorization: `Bearer ${accessToken}`, accept: 'application/json' },
+      });
+      if (info.ok) {
+        const data = await info.json();
+        if (data.sub === claims.sub) groupsClaim = data[claimName];
+      }
+    } catch (e) {
+      // keep going without groups
+    }
+  }
   const ttl = Number(env.SESSION_TTL) || DEFAULT_SESSION_TTL;
   const session = await signHS256({
     sub: claims.sub,
