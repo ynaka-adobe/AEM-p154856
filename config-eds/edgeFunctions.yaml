@@ -3,3 +3,20 @@ version: "1"
 data:
   functions:
     - name: my-edge-function
+    # Closed User Groups + Okta login for xsc-demo.ynaka-adobe.com only
+    # (see edge-functions-xsc-demo/README.md).
+    - name: xsc-demo-cug
+  # The config and secret stores are shared by all functions, so every
+  # xsc-demo key is prefixed with XSC_ to avoid collisions.
+  configs:
+    - key: XSC_OKTA_ISSUER
+      value: "https://YOUR-OKTA-DOMAIN.okta.com"
+    - key: XSC_OKTA_CLIENT_ID
+      value: "YOUR_OKTA_CLIENT_ID"
+  # Both Cloud Manager secret environment variables MUST exist before the
+  # config pipeline runs, or the deploy fails for every site on this CDN.
+  secrets:
+    - key: XSC_OKTA_CLIENT_SECRET
+      value: ${{XSC_OKTA_CLIENT_SECRET}}
+    - key: XSC_SESSION_SECRET
+      value: ${{XSC_SESSION_SECRET}}
