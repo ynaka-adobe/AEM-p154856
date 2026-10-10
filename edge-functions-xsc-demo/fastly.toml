@@ -21,8 +21,8 @@ service_id = ""
       format = "inline-toml"
     [local_server.config_stores.config_default.contents]
       XSC_PUBLIC_ORIGIN = "http://127.0.0.1:7676"
-      XSC_OKTA_ISSUER = "https://YOUR-OKTA-DOMAIN.okta.com"
-      XSC_OKTA_CLIENT_ID = "YOUR_OKTA_CLIENT_ID"
+      XSC_OKTA_ISSUER = "https://trial-5076725.okta.com"
+      XSC_OKTA_CLIENT_ID = "0oa18l1budg5m7Fnh698"
 
   [local_server.secret_stores]
     [[local_server.secret_stores.secret_default]]

@@ -10,9 +10,9 @@ data:
   # xsc-demo key is prefixed with XSC_ to avoid collisions.
   configs:
     - key: XSC_OKTA_ISSUER
-      value: "https://YOUR-OKTA-DOMAIN.okta.com"
+      value: "https://trial-5076725.okta.com"
     - key: XSC_OKTA_CLIENT_ID
-      value: "YOUR_OKTA_CLIENT_ID"
+      value: "0oa18l1budg5m7Fnh698"
   # Both Cloud Manager secret environment variables MUST exist before the
   # config pipeline runs, or the deploy fails for every site on this CDN.
   secrets:
