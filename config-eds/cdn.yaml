@@ -3,6 +3,20 @@
 kind: "CDN"
 version: "1"
 data:
+  # Purge API token, so the CDN cache can be cleared after a code/content push:
+  #   curl -X PURGE -H "X-AEM-Purge-Key: <key>" https://<domain>/<path>
+  # Only authenticates PURGE requests; normal traffic is unaffected.
+  authentication:
+    authenticators:
+      - name: purge-auth
+        type: purge
+        purgeKey1: ${{CDN_PURGEKEY_101026}}
+    rules:
+      - name: purge-auth-rule
+        when: { reqProperty: tier, equals: "publish" }
+        action:
+          type: authenticate
+          authenticator: purge-auth
   originSelectors:
     rules:
       # /mmm/login (and /<lang>/mmm/login) is a demo alias for 3M's B2B
