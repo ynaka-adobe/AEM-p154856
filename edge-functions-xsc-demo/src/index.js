@@ -20,6 +20,7 @@ import BUILD_ENV from './generated/build-env.js';
 import {
   callback, getSession, login, logout, me,
 } from './okta.js';
+import { dmToken } from './dm.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
@@ -55,6 +56,11 @@ async function loadEnv() {
     SESSION_TTL: get('XSC_SESSION_TTL'),
     OKTA_CLIENT_SECRET: await optionalSecret('XSC_OKTA_CLIENT_SECRET'),
     SESSION_SECRET: await optionalSecret('XSC_SESSION_SECRET'),
+    DM_DELIVERY: get('XSC_DM_DELIVERY'),
+    DM_CLIENT_ID: get('XSC_DM_CLIENT_ID'),
+    DM_SCOPE: get('XSC_DM_SCOPE'),
+    DM_TOKEN_TTL: get('XSC_DM_TOKEN_TTL'),
+    DM_CLIENT_SECRET: await optionalSecret('XSC_DM_CLIENT_SECRET'),
   };
 }
 
@@ -111,6 +117,7 @@ async function handleAuthRoute(request, env, url) {
     case '/auth/callback': return callback(request, env);
     case '/auth/logout': return logout(request, env);
     case '/auth/me': return me(request, env);
+    case '/auth/dm-token': return dmToken(await getSession(request, env), env);
     default: return new Response('Not Found', { status: 404 });
   }
 }
