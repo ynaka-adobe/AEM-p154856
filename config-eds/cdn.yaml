@@ -94,6 +94,19 @@ data:
             - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
             - { reqProperty: path, doesNotMatch: "^/(blocks|scripts|styles|fonts|icons)/" }
         action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
+      # Parker product pages (series + nested SKU pages) are built on a
+      # separate EDS site (ynaka-adobe/parker), not this AEM instance.
+      # Scoped to parker.ynaka-adobe.com only, so it cannot match any
+      # other domain sharing this CDN config.
+      - name: route-parker-products
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "parker.ynaka-adobe.com" }
+            - { reqProperty: originalPath, matches: "^/us/en/products(/|$)" }
+        action:
+          type: selectOrigin
+          originName: parker-eds
+          skipCache: true
     origins:
       - name: 3m-www
         domain: www.3m.com
@@ -102,6 +115,11 @@ data:
         forwardAuthorization: true
       - name: order-3m
         domain: order.3m.com
+        forwardHost: false
+        forwardCookie: true
+        forwardAuthorization: true
+      - name: parker-eds
+        domain: main--parker--ynaka-adobe.aem.network
         forwardHost: false
         forwardCookie: true
         forwardAuthorization: true
