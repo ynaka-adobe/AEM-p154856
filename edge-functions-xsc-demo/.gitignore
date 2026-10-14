@@ -3,3 +3,5 @@ bin/
 pkg/
 .aio
 package-lock.json
+.env
+src/generated/

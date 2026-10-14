@@ -14,21 +14,27 @@
 import { ConfigStore } from 'fastly:config-store';
 import { CacheOverride } from 'fastly:cache-override';
 import { SecretStoreManager } from './lib/config.js';
+// Generated at build time from .env (gitignored); used when the program has
+// no config/secret stores (e.g. sandbox programs).
+import BUILD_ENV from './generated/build-env.js';
 import {
   callback, getSession, login, logout, me,
 } from './okta.js';
+import { dmToken } from './dm.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
 const CUG_LOGIN_PATH_HEADER = 'x-aem-cug-login-path';
 const DEFAULT_ORIGIN = 'main--xsc-demo--ynaka-adobe.aem.live';
 const DEFAULT_PUBLIC_ORIGIN = 'https://xsc-demo.ynaka-adobe.com';
+const DEFAULT_OKTA_ISSUER = 'https://trial-5076725.okta.com';
+const DEFAULT_OKTA_CLIENT_ID = '0oa18l1budg5m7Fnh698';
 
 async function optionalSecret(key) {
   try {
     return await SecretStoreManager.getSecret(key);
   } catch (e) {
-    return undefined;
+    return BUILD_ENV[key];
   }
 }
 
@@ -39,17 +45,22 @@ async function loadEnv() {
   } catch (e) {
     config = { get: () => null };
   }
-  const get = (key) => config.get(key) || undefined;
+  const get = (key) => config.get(key) || BUILD_ENV[key] || undefined;
   return {
     ORIGIN_HOSTNAME: get('XSC_ORIGIN_HOSTNAME') || DEFAULT_ORIGIN,
     PUBLIC_ORIGIN: get('XSC_PUBLIC_ORIGIN') || DEFAULT_PUBLIC_ORIGIN,
-    OKTA_ISSUER: get('XSC_OKTA_ISSUER'),
-    OKTA_CLIENT_ID: get('XSC_OKTA_CLIENT_ID'),
+    OKTA_ISSUER: get('XSC_OKTA_ISSUER') || DEFAULT_OKTA_ISSUER,
+    OKTA_CLIENT_ID: get('XSC_OKTA_CLIENT_ID') || DEFAULT_OKTA_CLIENT_ID,
     OKTA_SCOPES: get('XSC_OKTA_SCOPES'),
     OKTA_GROUPS_CLAIM: get('XSC_OKTA_GROUPS_CLAIM'),
     SESSION_TTL: get('XSC_SESSION_TTL'),
     OKTA_CLIENT_SECRET: await optionalSecret('XSC_OKTA_CLIENT_SECRET'),
     SESSION_SECRET: await optionalSecret('XSC_SESSION_SECRET'),
+    DM_DELIVERY: get('XSC_DM_DELIVERY'),
+    DM_CLIENT_ID: get('XSC_DM_CLIENT_ID'),
+    DM_SCOPE: get('XSC_DM_SCOPE'),
+    DM_TOKEN_TTL: get('XSC_DM_TOKEN_TTL'),
+    DM_CLIENT_SECRET: await optionalSecret('XSC_DM_CLIENT_SECRET'),
   };
 }
 
@@ -95,14 +106,18 @@ function forbidden(session) {
 }
 
 async function handleAuthRoute(request, env, url) {
-  if (!env.OKTA_ISSUER || !env.OKTA_CLIENT_ID || !env.SESSION_SECRET) {
-    return new Response('Okta is not configured (XSC_OKTA_ISSUER, XSC_OKTA_CLIENT_ID, XSC_SESSION_SECRET)', { status: 500 });
+  const missing = [['XSC_OKTA_ISSUER', env.OKTA_ISSUER], ['XSC_OKTA_CLIENT_ID', env.OKTA_CLIENT_ID],
+    ['XSC_SESSION_SECRET', env.SESSION_SECRET], ['XSC_OKTA_CLIENT_SECRET', env.OKTA_CLIENT_SECRET]]
+    .filter(([, v]) => !v).map(([k]) => k);
+  if (missing.some((k) => k !== 'XSC_OKTA_CLIENT_SECRET')) {
+    return new Response(`Okta is not configured, missing: ${missing.join(', ')}`, { status: 500 });
   }
   switch (url.pathname) {
     case '/auth/login': return login(request, env);
     case '/auth/callback': return callback(request, env);
     case '/auth/logout': return logout(request, env);
     case '/auth/me': return me(request, env);
+    case '/auth/dm-token': return dmToken(await getSession(request, env), env);
     default: return new Response('Not Found', { status: 404 });
   }
 }

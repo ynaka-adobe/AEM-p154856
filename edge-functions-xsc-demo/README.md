@@ -41,6 +41,38 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 > *before* running the config pipeline. A missing secret fails the deploy for
 > **every** site on this CDN.
 
+### Sandbox programs (p154856)
+
+Sandbox programs have no config or secret stores, so the function falls back to:
+
+- built-in defaults for `XSC_OKTA_ISSUER` / `XSC_OKTA_CLIENT_ID` (see `src/index.js`);
+- values injected at build time from a gitignored `.env` (copy `.env.example`):
+  `npm run build` runs `scripts/gen-build-env.mjs`, which writes any `XSC_*`
+  values to `src/generated/build-env.js`.
+
+These values are embedded in the deployed package. Store values still take
+priority when the stores exist.
+
+## Dynamic Media secure delivery (`/auth/dm-token`)
+
+`GET /auth/dm-token` returns `{ token: "sd:…", expiryTime, delivery, groups }`
+for the signed-in user (401 when signed out). The function:
+
+1. gets an IMS access token for the OAuth Server-to-Server tech account (an AEM
+   admin) and caches it in memory;
+2. calls `POST {delivery}/adobe/assets/token` with the user's Okta `groups`.
+
+Pages append `?token=sd:…` to Dynamic Media delivery URLs. Assets whose
+`accessgroups` metadata matches one of the groups return 200; others return 404.
+
+Settings (`XSC_` prefix, store or `.env`):
+
+| Key | Default |
+|---|---|
+| `XSC_DM_CLIENT_ID`, `XSC_DM_CLIENT_SECRET` (secret), `XSC_DM_SCOPE` | required |
+| `XSC_DM_DELIVERY` | `https://delivery-p154856-e1944736.adobeaemcloud.com` |
+| `XSC_DM_TOKEN_TTL` | `900` seconds |
+
 ## Okta setup
 
 1. Create an **OIDC Web Application** app integration (grant type: Authorization Code).
