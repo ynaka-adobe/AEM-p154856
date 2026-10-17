@@ -2,7 +2,8 @@ kind: "EdgeFunctions"
 version: "1"
 data:
   functions:
-    - name: my-edge-function
+    # DuPont persona decisioning (see edge-functions-dupont/README.md).
+    - name: dupont-persona
     # Closed User Groups + Okta login for xsc-demo.ynaka-adobe.com only
     # (see edge-functions-xsc-demo/README.md).
     - name: xsc-demo-cug

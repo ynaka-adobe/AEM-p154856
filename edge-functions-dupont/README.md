@@ -14,7 +14,7 @@ repository's outdated README.
 
 EDS configuration lives in this repository's root `config-eds` directory:
 
-- `../config-eds/edgeFunctions.yaml` declares `my-edge-function`.
+- `../config-eds/edgeFunctions.yaml` declares `dupont-persona`.
 - `../config-eds/cdn.yaml` routes only the homepage (`/`) on the exact domain
   `dupont.ynaka-adobe.com` to this function, alongside the existing Toyota
   Financial `.html` rewrite. Other paths and domains do not select this function
@@ -71,8 +71,8 @@ authenticated Edge Functions CLI to build and deploy the declared function:
 
 ```sh
 aio aem edge-functions build
-aio aem edge-functions deploy my-edge-function
-aio aem edge-functions tail-logs my-edge-function
+aio aem edge-functions deploy dupont-persona
+aio aem edge-functions tail-logs dupont-persona
 ```
 
 Deployment requires the AEM Administrator product profile and the intended

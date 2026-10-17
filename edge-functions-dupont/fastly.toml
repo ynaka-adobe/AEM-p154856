@@ -4,7 +4,7 @@ cloned_from = "https://github.com/fastly/compute-starter-kit-javascript-empty"
 description = "DuPont AEM Edge Functions — persona decisioning"
 language = "javascript"
 manifest_version = 3
-name = "dupont-edge-functions"
+name = "dupont-persona"
 service_id = ""
 
 [scripts]
