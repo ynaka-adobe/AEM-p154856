@@ -77,12 +77,12 @@ data:
         action: { type: selectAemOrigin, originName: edgefunction-my-edge-function, skipCache: true }
       # xsc-demo Closed User Groups: every page/fragment/media request on
       # xsc-demo.ynaka-adobe.com goes through the xsc-demo-cug edge function,
-      # which enforces Okta login. Only static code paths bypass it.
+      # which enforces Okta login. Code paths go through it too, because the
+      # function adds the aem.live site-authentication token to origin requests.
       - name: route-xsc-demo-cug
         when:
           allOf:
             - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
-            - { reqProperty: path, doesNotMatch: "^/(blocks|scripts|styles|fonts|icons)/" }
         action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
       # Parker product pages (series + nested SKU pages) are built on a
       # separate EDS site (ynaka-adobe/parker), not this AEM instance.

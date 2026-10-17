@@ -21,6 +21,9 @@ import {
   callback, getSession, login, logout, me,
 } from './okta.js';
 import { dmToken } from './dm.js';
+import {
+  guestAllows, isEmployee, listDemos, redeemCode,
+} from './guest.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
@@ -29,6 +32,9 @@ const DEFAULT_ORIGIN = 'main--xsc-demo--ynaka-adobe.aem.live';
 const DEFAULT_PUBLIC_ORIGIN = 'https://xsc-demo.ynaka-adobe.com';
 const DEFAULT_OKTA_ISSUER = 'https://trial-5076725.okta.com';
 const DEFAULT_OKTA_CLIENT_ID = '0oa18l1budg5m7Fnh698';
+const DEFAULT_CODES_URL = 'https://main--xsc-demo--ynaka-adobe.aem.page/internal/demo-codes.json';
+// CUG group keyword: anyone signed in through the IdP (not guests)
+const EMPLOYEES_GROUP = 'employees';
 
 async function optionalSecret(key) {
   try {
@@ -61,6 +67,8 @@ async function loadEnv() {
     DM_SCOPE: get('XSC_DM_SCOPE'),
     DM_TOKEN_TTL: get('XSC_DM_TOKEN_TTL'),
     DM_CLIENT_SECRET: await optionalSecret('XSC_DM_CLIENT_SECRET'),
+    SITE_TOKEN: await optionalSecret('XSC_SITE_TOKEN'),
+    CODES_URL: get('XSC_CODES_URL') || DEFAULT_CODES_URL,
   };
 }
 
@@ -68,12 +76,14 @@ const isNavigation = (request) => request.method === 'GET'
   && (request.headers.get('accept') || '').includes('text/html');
 
 /**
- * Signed in and, if the origin lists groups, a member of at least one of them
- * (case-insensitive).
+ * Signed in through the IdP and, if the origin lists groups, a member of at least
+ * one of them (case-insensitive). The "employees" keyword matches every IdP user.
+ * Guests are never authorized by group; see guestAllows().
  */
 export function isAuthorized(session, allowedGroups) {
-  if (!session) return false;
+  if (!isEmployee(session)) return false;
   if (allowedGroups.length === 0) return true;
+  if (allowedGroups.some((g) => g.toLowerCase() === EMPLOYEES_GROUP)) return true;
   const mine = new Set((session.groups || []).map((g) => g.toLowerCase()));
   return allowedGroups.some((g) => mine.has(g.toLowerCase()));
 }
@@ -94,8 +104,11 @@ function loginRedirect(url, loginPath) {
 }
 
 function forbidden(session) {
-  const who = (session.email || session.sub || '').replace(/[<>&"']/g, '');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Access denied</title>
+  const who = (session.email || session.name || session.sub || '').replace(/[<>&"']/g, '');
+  const html = session.guest ? `<!doctype html><html><head><meta charset="utf-8"><title>Access denied</title>
+<style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem}</style></head>
+<body><h1>Not part of your demo</h1><p>Your access code doesn't include this page.</p>
+<p><a href="/customer-demo">Enter another code</a> · <a href="/auth/logout">Sign out</a></p></body></html>` : `<!doctype html><html><head><meta charset="utf-8"><title>Access denied</title>
 <style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem}</style></head>
 <body><h1>Access denied</h1><p>You are signed in as <strong>${who}</strong>, but your account is not in a group allowed to view this page.</p>
 <p><a href="/">Home</a> · <a href="/auth/logout">Sign out</a></p></body></html>`;
@@ -117,7 +130,12 @@ async function handleAuthRoute(request, env, url) {
     case '/auth/callback': return callback(request, env);
     case '/auth/logout': return logout(request, env);
     case '/auth/me': return me(request, env);
-    case '/auth/dm-token': return dmToken(await getSession(request, env), env);
+    case '/auth/dm-token': {
+      const session = await getSession(request, env);
+      return dmToken(isEmployee(session) ? session : null, env);
+    }
+    case '/auth/code': return redeemCode(request, env);
+    case '/auth/demos': return listDemos(request, env);
     default: return new Response('Not Found', { status: 404 });
   }
 }
@@ -129,6 +147,9 @@ async function proxyWithCug(request, env, url) {
   headers.delete('cookie');
   headers.delete('host');
   headers.set('x-forwarded-host', new URL(env.PUBLIC_ORIGIN).host);
+  // aem.live site authentication: origin rejects requests without the site token
+  if (env.SITE_TOKEN) headers.set('authorization', `token ${env.SITE_TOKEN}`);
+  else headers.delete('authorization');
   const originResp = await fetch(originUrl, {
     method: request.method,
     headers,
@@ -152,7 +173,9 @@ async function proxyWithCug(request, env, url) {
       if (isNavigation(request)) return loginRedirect(url, loginPath);
       return new Response('Unauthorized', { status: 401, headers: { 'cache-control': 'no-store' } });
     }
-    if (!isAuthorized(session, allowedGroups)) return forbidden(session);
+    if (!isAuthorized(session, allowedGroups) && !guestAllows(session, url.pathname)) {
+      return forbidden(session);
+    }
     respHeaders.set('cache-control', 'private, no-store');
   }
 

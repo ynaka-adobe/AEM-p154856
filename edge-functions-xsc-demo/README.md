@@ -93,6 +93,23 @@ Settings (`XSC_` prefix, store or `.env`):
    (`https://main--aem-apps--adobe-rnd.aem.live/tools/plugins/cug/cug.html`)
    and apply page access. The CUG headers only appear after this step.
 
+## Customer demo guest codes
+
+- `/customer-demo` (public) hosts the `demo-access` block: a single access-code form.
+- `POST /auth/code` checks the code against the employee-only DA sheet
+  `/internal/demo-codes` (columns `code | customer | path | expires | notes`),
+  read from the site-token-protected preview origin (`XSC_CODES_URL`), so codes
+  only need *preview*, never publish. A valid, unexpired code sets a guest
+  session granting that row's `path` (must be under `/customer-demo/`).
+- Guests see only their granted paths (plus page media). They never match CUG
+  groups, so `/internal/**` and other CUG folders stay closed to them.
+- The CUG group keyword `employees` matches anyone signed in through the IdP.
+  `/customer-demo/**` and `/internal/**` use it; `/customer-demo/**` sets
+  `x-aem-cug-login-path: /customer-demo` so anonymous visitors land on the form.
+- `GET /auth/demos` returns all rows + codes for employees, granted demos for guests.
+- Guest sessions last 8h (`XSC_SESSION_TTL`) or until the code's expiry, whichever
+  is sooner. Deleting a row blocks new redemptions; existing guest cookies run out.
+
 ## Build, test and deploy
 
 ```bash
@@ -113,6 +130,8 @@ Then run the Edge Delivery config pipeline for `/config-eds`.
 
 ## Notes
 
-- `*.aem.page` / `*.aem.live` URLs stay public unless site authentication is
-  enabled. Turn it on if the protected content must not be reachable directly.
+- Site authentication is enabled for `*.aem.page` / `*.aem.live`. The function
+  sends `Authorization: token $XSC_SITE_TOKEN` (admin API `secrets.json`) on
+  every origin request, so the CDN routes all xsc-demo paths, including code
+  paths, through it.
 - Responses from the function are never cached (`skipCache` and `CacheOverride('pass')`).
