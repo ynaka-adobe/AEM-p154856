@@ -223,7 +223,12 @@ export async function me(request, env) {
   const session = await getSession(request, env);
   const body = session
     ? {
-      authenticated: true, email: session.email, name: session.name, groups: session.groups,
+      authenticated: true,
+      guest: !!session.guest,
+      email: session.email,
+      name: session.name,
+      groups: session.guest ? (session.demos || []).map((d) => d.customer) : session.groups,
+      demos: session.demos,
     }
     : { authenticated: false };
   return new Response(JSON.stringify(body), {
