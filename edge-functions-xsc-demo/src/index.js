@@ -61,6 +61,7 @@ async function loadEnv() {
     DM_SCOPE: get('XSC_DM_SCOPE'),
     DM_TOKEN_TTL: get('XSC_DM_TOKEN_TTL'),
     DM_CLIENT_SECRET: await optionalSecret('XSC_DM_CLIENT_SECRET'),
+    SITE_TOKEN: await optionalSecret('XSC_SITE_TOKEN'),
   };
 }
 
@@ -129,6 +130,9 @@ async function proxyWithCug(request, env, url) {
   headers.delete('cookie');
   headers.delete('host');
   headers.set('x-forwarded-host', new URL(env.PUBLIC_ORIGIN).host);
+  // aem.live site authentication: origin rejects requests without the site token
+  if (env.SITE_TOKEN) headers.set('authorization', `token ${env.SITE_TOKEN}`);
+  else headers.delete('authorization');
   const originResp = await fetch(originUrl, {
     method: request.method,
     headers,

@@ -113,6 +113,8 @@ Then run the Edge Delivery config pipeline for `/config-eds`.
 
 ## Notes
 
-- `*.aem.page` / `*.aem.live` URLs stay public unless site authentication is
-  enabled. Turn it on if the protected content must not be reachable directly.
+- Site authentication is enabled for `*.aem.page` / `*.aem.live`. The function
+  sends `Authorization: token $XSC_SITE_TOKEN` (admin API `secrets.json`) on
+  every origin request, so the CDN routes all xsc-demo paths, including code
+  paths, through it.
 - Responses from the function are never cached (`skipCache` and `CacheOverride('pass')`).
