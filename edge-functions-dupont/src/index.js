@@ -26,10 +26,10 @@ const PERSONA = {
   4: { name: 'Industry Researcher', color: '#6a1b9a', color2: '#3f0f5c' },
 };
 
-function getOrigin(req) {
-  const host = req.headers.get('host') || '';
-  const site = host.split('.')[0];
-  return `https://main--${site}--ynaka-adobe.aem.live`;
+// Fixed site: the Host header seen by the function behind the Adobe CDN is not
+// necessarily the public hostname, so deriving the site from it can 404.
+function getOrigin() {
+  return 'https://main--dupont--ynaka-adobe.aem.live';
 }
 
 // Wrap a plain-content hero offer (e.g. a DA Experience Fragment, whose inline
@@ -67,7 +67,7 @@ async function handleRequest(event) {
   const originHeaders = new Headers();
   // Same as the xsc-demo function: tell aem.live which public host this is.
   originHeaders.set('x-forwarded-host', url.host);
-  const originResp = await fetch(getOrigin(req) + originPath + (url.search || ''), { headers: originHeaders });
+  const originResp = await fetch(getOrigin() + originPath + (url.search || ''), { headers: originHeaders });
   let html = await originResp.text();
 
   // 2) decision at the edge
