@@ -61,7 +61,13 @@ async function handleRequest(event) {
   const ids = resolveIds(cookies);
 
   // 1) base page from the content origin (host → main--<site>--ynaka-adobe.aem.live)
-  const originResp = await fetch(getOrigin(req) + url.pathname + (url.search || ''));
+  // The content lives under /en/, and the origin 301s "/" there. Fetch /en/
+  // directly so the persona is injected here instead of on a redirect.
+  const originPath = url.pathname === '/' ? '/en/' : url.pathname;
+  const originHeaders = new Headers();
+  // Same as the xsc-demo function: tell aem.live which public host this is.
+  originHeaders.set('x-forwarded-host', url.host);
+  const originResp = await fetch(getOrigin(req) + originPath + (url.search || ''), { headers: originHeaders });
   let html = await originResp.text();
 
   // 2) decision at the edge
