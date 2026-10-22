@@ -30,13 +30,18 @@ AEM sends as `x-aem-cug-groups`. `src/abac.js` evaluates them:
 | *(empty)* | any user signed in through Okta |
 | `logged-in, USA` | signed in **and** country US |
 | `logged-in, Japan` | signed in **and** country JP |
+| `logged-in, country:US, company:adobe` | signed in, US **and** Adobe |
 | `partners` | member of Okta group `partners` |
 | `USA \| Japan` | US **or** JP (`\|` separates alternative rules) |
 
 - Comma = AND, `|` = OR. Matching is case-insensitive.
 - Subject attributes: `logged-in` (alias `employees`) for every Okta user,
   `country:<ISO>` from the Okta profile's **countryCode** (`address` scope or a
-  custom `country` claim), and `group:<name>` per Okta group.
+  custom `country` claim), `company:<slug>` from a `company` claim or else the
+  email domain (adobe.com, cat.com, perficient.com), and `group:<name>` per
+  Okta group.
+- Rules are authored with the **Page Access** DA Prepare plugin in the
+  xsc-demo repo (`tools/cug/cug.html`).
 - Country names/aliases (`USA`, `United States`, `Japan`, `JPN`) are recognised;
   use `country:XX` for others and `group:name` to force a group.
 - Guests (access codes) hold no attributes and fail closed.
@@ -54,6 +59,7 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 | `XSC_OKTA_SCOPES` | config | optional, default `openid profile email groups address` |
 | `XSC_OKTA_GROUPS_CLAIM` | config | optional, default `groups` |
 | `XSC_OKTA_COUNTRY_CLAIM` | config | optional, default `country`; falls back to `address.country` |
+| `XSC_OKTA_COMPANY_CLAIM` | config | optional, default `company`; falls back to the email domain |
 | `XSC_SESSION_TTL` | config | optional, seconds, default `28800` |
 | `XSC_ORIGIN_HOSTNAME` | config | optional, default `main--xsc-demo--ynaka-adobe.aem.live` |
 | `XSC_PUBLIC_ORIGIN` | config | optional, default `https://xsc-demo.ynaka-adobe.com` |

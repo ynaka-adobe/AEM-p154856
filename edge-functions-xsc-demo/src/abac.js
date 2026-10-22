@@ -6,6 +6,7 @@
  *
  *   /members/usa/**    logged-in, USA
  *   /members/japan/**  logged-in, Japan
+ *   /cat/**            logged-in, country:US, company:caterpillar
  *
  * AEM delivers that cell verbatim as the `x-aem-cug-groups` response header.
  * This module turns the header into a policy and the signed-in session into a
@@ -29,7 +30,19 @@ export const ATTR_LOGGED_IN = 'logged-in';
 export const ATTR_EMPLOYEES = 'employees';
 
 const COUNTRY_PREFIX = 'country:';
+const COMPANY_PREFIX = 'company:';
 const GROUP_PREFIX = 'group:';
+
+/**
+ * Email domains that identify a company when Okta sends no `company` claim.
+ * Demo-grade: it trusts the IdP-asserted email, which Okta verifies.
+ */
+const COMPANY_DOMAINS = {
+  'adobe.com': 'adobe',
+  'cat.com': 'caterpillar',
+  'caterpillar.com': 'caterpillar',
+  'perficient.com': 'perficient',
+};
 
 /**
  * Country names and codes authors are likely to type, mapped to ISO 3166-1
@@ -83,12 +96,33 @@ export function normaliseCountry(value) {
   return '';
 }
 
+/** Lower-case slug for company names: `Caterpillar Inc.` → `caterpillar-inc`. */
+export function normaliseCompany(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Company from an explicit claim, else from the email domain (or a parent domain). */
+export function companyOf(session) {
+  const claimed = normaliseCompany(session && session.company);
+  if (claimed) return claimed;
+  const email = session && typeof session.email === 'string' ? session.email.toLowerCase() : '';
+  const domain = email.includes('@') ? email.split('@').pop() : '';
+  const labels = domain.split('.');
+  for (let i = 0; i < labels.length - 1; i += 1) {
+    const candidate = labels.slice(i).join('.');
+    if (COMPANY_DOMAINS[candidate]) return COMPANY_DOMAINS[candidate];
+  }
+  return '';
+}
+
 // ─── Policy (from the x-aem-cug-groups header) ──────────────────────────────
 
 /**
  * Classifies one authored token. Explicit prefixes win; otherwise known
  * keywords, then country names, and finally a plain group name.
- * Returns a canonical string such as `logged-in`, `country:US`, `group:partners`.
+ * Returns a canonical string such as `logged-in`, `country:US`, `company:adobe`,
+ * `group:partners`.
  */
 export function normaliseAttribute(token) {
   const t = String(token || '').trim().toLowerCase();
@@ -98,6 +132,10 @@ export function normaliseAttribute(token) {
     const c = normaliseCountry(t.slice(COUNTRY_PREFIX.length))
       || t.slice(COUNTRY_PREFIX.length).trim().toUpperCase();
     return c ? `${COUNTRY_PREFIX}${c}` : '';
+  }
+  if (t.startsWith(COMPANY_PREFIX)) {
+    const c = normaliseCompany(t.slice(COMPANY_PREFIX.length));
+    return c ? `${COMPANY_PREFIX}${c}` : '';
   }
   if (t.startsWith(GROUP_PREFIX)) {
     const g = t.slice(GROUP_PREFIX.length).trim();
@@ -136,6 +174,8 @@ export function subjectAttributes(session) {
   attrs.add(ATTR_LOGGED_IN);
   const country = normaliseCountry(session.country);
   if (country) attrs.add(`${COUNTRY_PREFIX}${country}`);
+  const company = companyOf(session);
+  if (company) attrs.add(`${COMPANY_PREFIX}${company}`);
   (Array.isArray(session.groups) ? session.groups : []).forEach((g) => {
     if (typeof g === 'string' && g.trim()) attrs.add(`${GROUP_PREFIX}${g.trim().toLowerCase()}`);
   });

@@ -79,6 +79,9 @@ export async function getSession(request, env) {
   return verifyHS256(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET);
 }
 
+const stringClaim = (claims, name) => (claims && typeof claims[name] === 'string'
+  ? claims[name].trim() : '');
+
 /**
  * The user's country for ABAC: a custom claim (default `country`) wins, then
  * the standard OIDC `address.country` (Okta fills it from the profile's
@@ -188,7 +191,9 @@ export async function callback(request, env) {
   const claimName = env.OKTA_GROUPS_CLAIM || 'groups';
   const countryClaim = env.OKTA_COUNTRY_CLAIM || 'country';
   let groupsClaim = claims[claimName];
+  const companyClaim = env.OKTA_COMPANY_CLAIM || 'company';
   let country = countryFrom(claims, countryClaim);
+  let company = stringClaim(claims, companyClaim);
   // Okta can omit groups (and address) from the ID token in the code flow;
   // /userinfo has them.
   if ((!Array.isArray(groupsClaim) || !country) && accessToken && config.userinfo_endpoint) {
@@ -202,6 +207,7 @@ export async function callback(request, env) {
         if (data.sub === claims.sub) {
           if (!Array.isArray(groupsClaim)) groupsClaim = data[claimName];
           if (!country) country = countryFrom(data, countryClaim);
+          if (!company) company = stringClaim(data, companyClaim);
         }
       }
     } catch (e) {
@@ -216,6 +222,8 @@ export async function callback(request, env) {
     groups: Array.isArray(groupsClaim) ? groupsClaim : [],
     // ABAC subject attribute (abac.js); '' when Okta has no country for the user
     country,
+    // optional; abac.js falls back to the email domain when empty
+    company,
     exp: Math.floor(Date.now() / 1000) + ttl,
   }, env.SESSION_SECRET);
 
@@ -252,6 +260,7 @@ export async function me(request, env) {
       name: session.name,
       groups: session.guest ? (session.demos || []).map((d) => d.customer) : session.groups,
       country: session.country || '',
+      company: session.company || '',
       attributes: [...subjectAttributes(session)],
       demos: session.demos,
     }

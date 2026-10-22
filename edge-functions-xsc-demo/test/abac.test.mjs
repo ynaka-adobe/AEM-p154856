@@ -67,3 +67,20 @@ test('evaluatePolicy fails closed for guests and anonymous', () => {
   assert.equal(evaluatePolicy(guest, 'employees').allowed, false);
   assert.equal(evaluatePolicy(null, '').allowed, false);
 });
+
+test('company attribute: claim, email domain, policy', async () => {
+  const { companyOf } = await import('../src/abac.js');
+  assert.equal(companyOf({ email: 'ynaka@adobe.com' }), 'adobe');
+  assert.equal(companyOf({ email: 'x@na.cat.com' }), 'caterpillar', 'subdomains map too');
+  assert.equal(companyOf({ email: 'x@perficient.com', company: 'Caterpillar Inc.' }), 'caterpillar-inc', 'claim wins');
+  assert.equal(companyOf({ email: 'x@gmail.com' }), '');
+  assert.equal(normaliseAttribute('company:Perficient'), 'company:perficient');
+  const adobeUs = { sub: '5', email: 'ynaka@adobe.com', country: 'US' };
+  const rule = 'logged-in, country:US, company:adobe';
+  assert.equal(evaluatePolicy(adobeUs, rule).allowed, true);
+  assert.deepEqual(evaluatePolicy({ ...adobeUs, country: 'DE' }, rule).missing, ['country:US']);
+  assert.deepEqual(
+    evaluatePolicy({ ...adobeUs, email: 'x@cat.com' }, rule).missing,
+    ['company:adobe'],
+  );
+});
