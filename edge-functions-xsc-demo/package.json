@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/gen-build-env.mjs && js-compute-runtime ./src/index.js ./bin/main.wasm",
-    "test": "node --test test/"
+    "test": "node --test 'test/**/*.test.mjs'"
   },
   "overrides": {
     "esbuild": ">=0.28.1",

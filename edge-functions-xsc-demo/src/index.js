@@ -24,6 +24,7 @@ import { dmToken } from './dm.js';
 import {
   guestAllows, isEmployee, listDemos, redeemCode,
 } from './guest.js';
+import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
@@ -33,8 +34,6 @@ const DEFAULT_PUBLIC_ORIGIN = 'https://xsc-demo.ynaka-adobe.com';
 const DEFAULT_OKTA_ISSUER = 'https://trial-5076725.okta.com';
 const DEFAULT_OKTA_CLIENT_ID = '0oa18l1budg5m7Fnh698';
 const DEFAULT_CODES_URL = 'https://main--xsc-demo--ynaka-adobe.aem.page/internal/demo-codes.json';
-// CUG group keyword: anyone signed in through the IdP (not guests)
-const EMPLOYEES_GROUP = 'employees';
 
 async function optionalSecret(key) {
   try {
@@ -59,6 +58,7 @@ async function loadEnv() {
     OKTA_CLIENT_ID: get('XSC_OKTA_CLIENT_ID') || DEFAULT_OKTA_CLIENT_ID,
     OKTA_SCOPES: get('XSC_OKTA_SCOPES'),
     OKTA_GROUPS_CLAIM: get('XSC_OKTA_GROUPS_CLAIM'),
+    OKTA_COUNTRY_CLAIM: get('XSC_OKTA_COUNTRY_CLAIM'),
     SESSION_TTL: get('XSC_SESSION_TTL'),
     OKTA_CLIENT_SECRET: await optionalSecret('XSC_OKTA_CLIENT_SECRET'),
     SESSION_SECRET: await optionalSecret('XSC_SESSION_SECRET'),
@@ -75,19 +75,6 @@ async function loadEnv() {
 const isNavigation = (request) => request.method === 'GET'
   && (request.headers.get('accept') || '').includes('text/html');
 
-/**
- * Signed in through the IdP and, if the origin lists groups, a member of at least
- * one of them (case-insensitive). The "employees" keyword matches every IdP user.
- * Guests are never authorized by group; see guestAllows().
- */
-export function isAuthorized(session, allowedGroups) {
-  if (!isEmployee(session)) return false;
-  if (allowedGroups.length === 0) return true;
-  if (allowedGroups.some((g) => g.toLowerCase() === EMPLOYEES_GROUP)) return true;
-  const mine = new Set((session.groups || []).map((g) => g.toLowerCase()));
-  return allowedGroups.some((g) => mine.has(g.toLowerCase()));
-}
-
 function loginRedirect(url, loginPath) {
   const returnTo = `${url.pathname}${url.search}`;
   let location;
@@ -103,14 +90,19 @@ function loginRedirect(url, loginPath) {
   });
 }
 
-function forbidden(session) {
-  const who = (session.email || session.name || session.sub || '').replace(/[<>&"']/g, '');
+const escapeHtml = (v) => String(v).replace(/[<>&"']/g, '');
+
+function forbidden(session, missing = []) {
+  const who = escapeHtml(session.email || session.name || session.sub || '');
+  const held = [...subjectAttributes(session)].map(describeAttribute);
+  const list = (attrs) => (attrs.length ? attrs.map((a) => `<code>${escapeHtml(a)}</code>`).join(', ') : 'none');
   const html = session.guest ? `<!doctype html><html><head><meta charset="utf-8"><title>Access denied</title>
 <style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem}</style></head>
 <body><h1>Not part of your demo</h1><p>Your access code doesn't include this page.</p>
 <p><a href="/customer-demo">Enter another code</a> · <a href="/auth/logout">Sign out</a></p></body></html>` : `<!doctype html><html><head><meta charset="utf-8"><title>Access denied</title>
 <style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem}</style></head>
-<body><h1>Access denied</h1><p>You are signed in as <strong>${who}</strong>, but your account is not in a group allowed to view this page.</p>
+<body><h1>Access denied</h1><p>You are signed in as <strong>${who}</strong>, but your account does not have the attributes this page requires.</p>
+<p>Missing: ${list(missing.map(describeAttribute))}<br>Your attributes: ${list(held)}</p>
 <p><a href="/">Home</a> · <a href="/auth/logout">Sign out</a></p></body></html>`;
   return new Response(html, {
     status: 403,
@@ -160,8 +152,8 @@ async function proxyWithCug(request, env, url) {
 
   const respHeaders = new Headers(originResp.headers);
   const cugRequired = respHeaders.get(CUG_REQUIRED_HEADER) === 'true';
-  const allowedGroups = (respHeaders.get(CUG_GROUPS_HEADER) || '')
-    .split(',').map((g) => g.trim()).filter(Boolean);
+  // ABAC policy: attributes from the sheet's Groups column (see abac.js)
+  const policy = respHeaders.get(CUG_GROUPS_HEADER) || '';
   const loginPath = respHeaders.get(CUG_LOGIN_PATH_HEADER);
   respHeaders.delete(CUG_REQUIRED_HEADER);
   respHeaders.delete(CUG_GROUPS_HEADER);
@@ -173,8 +165,9 @@ async function proxyWithCug(request, env, url) {
       if (isNavigation(request)) return loginRedirect(url, loginPath);
       return new Response('Unauthorized', { status: 401, headers: { 'cache-control': 'no-store' } });
     }
-    if (!isAuthorized(session, allowedGroups) && !guestAllows(session, url.pathname)) {
-      return forbidden(session);
+    const decision = evaluatePolicy(session, policy);
+    if (!decision.allowed && !guestAllows(session, url.pathname)) {
+      return forbidden(session, decision.missing);
     }
     respHeaders.set('cache-control', 'private, no-store');
   }

@@ -2,6 +2,7 @@ import { CacheOverride } from 'fastly:cache-override';
 import {
   b64urlEncode, randomString, sha256, signHS256, verifyHS256, verifyRS256,
 } from './jwt.js';
+import { subjectAttributes } from './abac.js';
 
 export const SESSION_COOKIE = 'cug_session';
 const TX_COOKIE = 'cug_tx';
@@ -78,6 +79,20 @@ export async function getSession(request, env) {
   return verifyHS256(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET);
 }
 
+/**
+ * The user's country for ABAC: a custom claim (default `country`) wins, then
+ * the standard OIDC `address.country` (Okta fills it from the profile's
+ * countryCode via the `address` scope). `locale` is deliberately ignored: it is
+ * a language preference and Okta defaults it to en_US for everyone.
+ */
+function countryFrom(claims, claimName) {
+  const custom = claims && claims[claimName];
+  if (typeof custom === 'string' && custom.trim()) return custom.trim();
+  const addr = claims && claims.address;
+  if (addr && typeof addr.country === 'string' && addr.country.trim()) return addr.country.trim();
+  return '';
+}
+
 export async function login(request, env) {
   const url = new URL(request.url);
   const config = await discovery(env);
@@ -95,7 +110,7 @@ export async function login(request, env) {
   authorize.search = new URLSearchParams({
     client_id: env.OKTA_CLIENT_ID,
     response_type: 'code',
-    scope: env.OKTA_SCOPES || 'openid profile email groups',
+    scope: env.OKTA_SCOPES || 'openid profile email groups address',
     redirect_uri: callbackUrl(env, url),
     state,
     nonce,
@@ -171,9 +186,12 @@ export async function callback(request, env) {
   }
 
   const claimName = env.OKTA_GROUPS_CLAIM || 'groups';
+  const countryClaim = env.OKTA_COUNTRY_CLAIM || 'country';
   let groupsClaim = claims[claimName];
-  // Okta can omit groups from the ID token in the code flow; /userinfo has them.
-  if (!Array.isArray(groupsClaim) && accessToken && config.userinfo_endpoint) {
+  let country = countryFrom(claims, countryClaim);
+  // Okta can omit groups (and address) from the ID token in the code flow;
+  // /userinfo has them.
+  if ((!Array.isArray(groupsClaim) || !country) && accessToken && config.userinfo_endpoint) {
     try {
       const info = await fetch(config.userinfo_endpoint, {
         ...noCache(),
@@ -181,10 +199,13 @@ export async function callback(request, env) {
       });
       if (info.ok) {
         const data = await info.json();
-        if (data.sub === claims.sub) groupsClaim = data[claimName];
+        if (data.sub === claims.sub) {
+          if (!Array.isArray(groupsClaim)) groupsClaim = data[claimName];
+          if (!country) country = countryFrom(data, countryClaim);
+        }
       }
     } catch (e) {
-      // keep going without groups
+      // keep going without groups / country
     }
   }
   const ttl = Number(env.SESSION_TTL) || DEFAULT_SESSION_TTL;
@@ -193,6 +214,8 @@ export async function callback(request, env) {
     email: claims.email,
     name: claims.name,
     groups: Array.isArray(groupsClaim) ? groupsClaim : [],
+    // ABAC subject attribute (abac.js); '' when Okta has no country for the user
+    country,
     exp: Math.floor(Date.now() / 1000) + ttl,
   }, env.SESSION_SECRET);
 
@@ -228,6 +251,8 @@ export async function me(request, env) {
       email: session.email,
       name: session.name,
       groups: session.guest ? (session.demos || []).map((d) => d.customer) : session.groups,
+      country: session.country || '',
+      attributes: [...subjectAttributes(session)],
       demos: session.demos,
     }
     : { authenticated: false };

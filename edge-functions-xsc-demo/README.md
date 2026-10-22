@@ -15,10 +15,32 @@ How it works:
    - public page: serves it;
    - protected page, no session: browser navigations get a 302 to
      `/auth/login`, other requests get a 401;
-   - logged in but not in a required group: 403.
+   - logged in but missing a required attribute: 403 (lists what is missing).
 3. `/auth/login`, `/auth/callback`, `/auth/logout` and `/auth/me` handle the
    Okta flow. The session is an HMAC-signed, HttpOnly cookie holding the user's
-   email, name and Okta `groups`. ID tokens are verified against Okta's JWKS.
+   email, name, Okta `groups` and `country`. ID tokens are verified against Okta's JWKS.
+
+## Attribute-based access (ABAC)
+
+The Groups column of the `closed-user-groups` sheet holds **attributes**, which
+AEM sends as `x-aem-cug-groups`. `src/abac.js` evaluates them:
+
+| Groups cell | Meaning |
+| --- | --- |
+| *(empty)* | any user signed in through Okta |
+| `logged-in, USA` | signed in **and** country US |
+| `logged-in, Japan` | signed in **and** country JP |
+| `partners` | member of Okta group `partners` |
+| `USA \| Japan` | US **or** JP (`\|` separates alternative rules) |
+
+- Comma = AND, `|` = OR. Matching is case-insensitive.
+- Subject attributes: `logged-in` (alias `employees`) for every Okta user,
+  `country:<ISO>` from the Okta profile's **countryCode** (`address` scope or a
+  custom `country` claim), and `group:<name>` per Okta group.
+- Country names/aliases (`USA`, `United States`, `Japan`, `JPN`) are recognised;
+  use `country:XX` for others and `group:name` to force a group.
+- Guests (access codes) hold no attributes and fail closed.
+- `/auth/me` returns `country` and `attributes`. Tests: `npm test`.
 
 ## Configuration
 
@@ -29,8 +51,9 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 | --- | --- | --- |
 | `XSC_OKTA_ISSUER` | config | e.g. `https://acme.okta.com` (org server) or `https://acme.okta.com/oauth2/default` |
 | `XSC_OKTA_CLIENT_ID` | config | Okta app client ID |
-| `XSC_OKTA_SCOPES` | config | optional, default `openid profile email groups` |
+| `XSC_OKTA_SCOPES` | config | optional, default `openid profile email groups address` |
 | `XSC_OKTA_GROUPS_CLAIM` | config | optional, default `groups` |
+| `XSC_OKTA_COUNTRY_CLAIM` | config | optional, default `country`; falls back to `address.country` |
 | `XSC_SESSION_TTL` | config | optional, seconds, default `28800` |
 | `XSC_ORIGIN_HOSTNAME` | config | optional, default `main--xsc-demo--ynaka-adobe.aem.live` |
 | `XSC_PUBLIC_ORIGIN` | config | optional, default `https://xsc-demo.ynaka-adobe.com` |
