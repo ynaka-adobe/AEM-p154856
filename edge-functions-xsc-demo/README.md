@@ -22,18 +22,25 @@ How it works:
 
 ## Additional sites
 
-The function also serves **fmcdealer.ynaka-adobe.com** (EDS site
-`ynaka-adobe/fmcdealer-communications`). `src/sites.js` maps each extra
-hostname to its own origin and public URL; `cdn.yaml` has a matching
-`route-fmcdealer-cug` rule. Hosts not listed behave as xsc-demo. Per extra site:
+The function serves any `*.ynaka-adobe.com` host that `cdn.yaml` routes to it,
+for example **fmcdealer.ynaka-adobe.com** (EDS site
+`ynaka-adobe/fmcdealer-communications`). `src/sites.js` resolves the site from
+the request host (forwarded-host headers first):
 
-- the same Okta app and session secret are used (cookies are host-only, so each
-  hostname signs in separately);
-- guest access codes and `/auth/dm-token` are disabled (404);
-- the aem.live site token is never shared: set `XSC_FMCDEALER_SITE_TOKEN`
-  only if site authentication is enabled on that site;
-- add `https://<host>/auth/callback` and `https://<host>/` to the Okta app's
-  sign-in and sign-out redirect URIs, and add the domain in Cloud Manager.
+- the public origin (Okta `redirect_uri` / `post_logout_redirect_uri`) is always
+  `https://<host>`; the Okta app uses wildcard redirect URIs
+  (`https://*.ynaka-adobe.com/auth/callback`), so a new host needs no Okta change;
+- the EDS origin is `main--<subdomain>--ynaka-adobe.aem.live`, unless the host
+  has an entry in `SITES` (needed when the subdomain differs from the repo name);
+- guest access codes and `/auth/dm-token` are disabled (404) on these hosts;
+- the aem.live site token is never shared with xsc-demo: set
+  `XSC_<SUBDOMAIN>_SITE_TOKEN` (e.g. `XSC_FMCDEALER_SITE_TOKEN`) only if site
+  authentication is enabled on that site;
+- sessions are per hostname (host-only cookies), so each host signs in separately.
+
+To add a site: add the domain in Cloud Manager, add a `route-<name>-cug` rule in
+`config-eds/cdn.yaml`, and (only if needed) a `SITES` entry. Hosts not routed
+here never reach the function.
 
 ## Attribute-based access (ABAC)
 

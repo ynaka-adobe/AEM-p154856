@@ -7,6 +7,20 @@ test('fmcdealer host resolves to its own origin and public URL', () => {
   assert.equal(site.ORIGIN_HOSTNAME, 'main--fmcdealer-communications--ynaka-adobe.aem.live');
   assert.equal(site.PUBLIC_ORIGIN, 'https://fmcdealer.ynaka-adobe.com');
   assert.equal(site.guestCodes, false);
+  assert.equal(site.siteTokenKey, 'XSC_FMCDEALER_SITE_TOKEN');
+});
+
+test('other ynaka-adobe.com subdomains derive origin and public URL from the host', () => {
+  const site = siteForHost('acme-demo.ynaka-adobe.com');
+  assert.equal(site.ORIGIN_HOSTNAME, 'main--acme-demo--ynaka-adobe.aem.live');
+  assert.equal(site.PUBLIC_ORIGIN, 'https://acme-demo.ynaka-adobe.com');
+  assert.equal(site.siteTokenKey, 'XSC_ACME_DEMO_SITE_TOKEN');
+});
+
+test('hosts outside ynaka-adobe.com are never matched', () => {
+  assert.equal(siteForHost('evil.com'), null);
+  assert.equal(siteForHost('ynaka-adobe.com.evil.com'), null);
+  assert.equal(siteForHost('a.b.ynaka-adobe.com'), null);
 });
 
 test('host matching is case-insensitive', () => {

@@ -1,24 +1,38 @@
 /*
  * Per-hostname site settings. The edge function serves several EDS sites that
- * share one Okta app and one session secret; everything that differs per
- * site (origin, public URL, origin credentials, guest-code support) lives here.
+ * share one Okta app (its redirect URIs use a wildcard, https://*.ynaka-adobe.com)
+ * and one session secret. Everything that differs per site lives here.
  *
- * Hosts not listed fall back to the xsc-demo defaults from loadEnv().
+ * - Hosts in SITES use their explicit EDS origin.
+ * - Any other *.ynaka-adobe.com host that cdn.yaml routes to the function uses
+ *   the convention main--<subdomain>--ynaka-adobe.aem.live.
+ * - xsc-demo and every other host use the defaults from loadEnv().
+ *
+ * The public origin is always derived from the matched host, never hard-coded.
  */
+const DEFAULT_HOST = 'xsc-demo.ynaka-adobe.com';
+const WILDCARD = /^([a-z0-9-]+)\.ynaka-adobe\.com$/;
+
 export const SITES = {
-  'fmcdealer.ynaka-adobe.com': {
-    ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live',
-    PUBLIC_ORIGIN: 'https://fmcdealer.ynaka-adobe.com',
-    // optional per-site aem.live site-authentication token (never reuse xsc-demo's)
-    siteTokenKey: 'XSC_FMCDEALER_SITE_TOKEN',
-    // xsc-demo-only features: guest access codes and Dynamic Media tokens
-    guestCodes: false,
-  },
+  // subdomain differs from the EDS repo name
+  'fmcdealer.ynaka-adobe.com': { ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live' },
 };
 
 /** Returns the site overrides for a hostname, or null for the default site. */
 export function siteForHost(hostname) {
-  return SITES[String(hostname || '').toLowerCase()] || null;
+  const host = String(hostname || '').toLowerCase();
+  if (host === DEFAULT_HOST) return null;
+  const match = host.match(WILDCARD);
+  if (!match) return null;
+  const site = SITES[host] || { ORIGIN_HOSTNAME: `main--${match[1]}--ynaka-adobe.aem.live` };
+  return {
+    ...site,
+    PUBLIC_ORIGIN: `https://${host}`,
+    // optional per-site aem.live site-authentication token (never reuse xsc-demo's)
+    siteTokenKey: `XSC_${match[1].toUpperCase().replace(/-/g, '_')}_SITE_TOKEN`,
+    // xsc-demo-only features: guest access codes and Dynamic Media tokens
+    guestCodes: false,
+  };
 }
 
 /** Auth routes that only exist on the default (xsc-demo) site. */
