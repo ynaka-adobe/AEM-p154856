@@ -14,12 +14,15 @@ export function normalizePath(p, root = GUEST_ROOT) {
   return path;
 }
 
+/** Paths a site-root guest grant never covers (employee-only content such as the code sheet). */
+const ROOT_GRANT_DENY = /^\/internal(\/|\.|$)/;
+
 /** True when a guest session grants the request path. */
 export function guestAllows(session, pathname) {
   if (!session?.guest) return false;
   const demos = session.demos || [];
   // media (media_<hash>.*) is stored next to the page and has unguessable names
   if (/^\/customer-demo\/(.+\/)?media_[0-9a-f]+\.[a-z0-9]+$/i.test(pathname)) return demos.length > 0;
-  return demos.some(({ path }) => path === '/'
+  return demos.some(({ path }) => (path === '/' && !ROOT_GRANT_DENY.test(pathname))
     || pathname === path || pathname.startsWith(`${path}/`) || pathname.startsWith(`${path}.`));
 }

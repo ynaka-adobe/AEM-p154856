@@ -6,7 +6,11 @@ test('fmcdealer host resolves to its own origin and public URL', () => {
   const site = siteForHost('fmc-dealer-communications.ynaka-adobe.com');
   assert.equal(site.ORIGIN_HOSTNAME, 'main--fmcdealer-communications--ynaka-adobe.aem.live');
   assert.equal(site.PUBLIC_ORIGIN, 'https://fmc-dealer-communications.ynaka-adobe.com');
-  assert.deepEqual(site.guest, { grantPath: '/customer-demo/fmc-dealer-communications', root: '/', landing: '/access' });
+  assert.deepEqual(site.guest, {
+    codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
+    root: '/',
+    landing: '/access',
+  });
   assert.equal(site.siteTokenKey, 'XSC_FMC_DEALER_COMMUNICATIONS_SITE_TOKEN');
 });
 

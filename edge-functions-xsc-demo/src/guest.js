@@ -45,9 +45,9 @@ function expiresAt(value) {
 }
 
 export async function loadCodes(env) {
-  const resp = await fetch(env.CODES_URL, {
-    // extra sites read xsc-demo's protected code sheet with xsc-demo's token (CODES_TOKEN)
-    headers: (env.CODES_TOKEN || env.SITE_TOKEN) ? { authorization: `token ${env.CODES_TOKEN || env.SITE_TOKEN}` } : {},
+  // a site with its own guest settings reads its own sheet, whose rows grant the site root
+  const resp = await fetch(env.GUEST?.codesUrl || env.CODES_URL, {
+    headers: env.SITE_TOKEN ? { authorization: `token ${env.SITE_TOKEN}` } : {},
     cacheOverride: new CacheOverride('pass'),
   });
   if (!resp.ok) throw new Error(`demo codes fetch failed: ${resp.status}`);
@@ -58,7 +58,7 @@ export async function loadCodes(env) {
     return {
       code: normalizeCode(row.code),
       customer: String(row.customer || '').trim(),
-      path: normalizePath(row.path),
+      path: env.GUEST ? env.GUEST.root : normalizePath(row.path),
       expires: String(row.expires || '').trim(),
       exp,
       active: exp === null || exp > now,
@@ -78,9 +78,7 @@ export async function redeemCode(request, env) {
   const back = (error) => redirect(`${landing}?error=${error}${returnTo !== '/' ? `&returnTo=${encodeURIComponent(returnTo)}` : ''}`);
   if (!code) return back('missing');
 
-  // a site with its own guest settings only accepts codes granted to its demo page
-  const match = (await loadCodes(env))
-    .find((r) => r.code === code && (!guest || r.path === guest.grantPath));
+  const match = (await loadCodes(env)).find((r) => r.code === code);
   if (!match) return back('invalid');
   if (!match.active) return back('expired');
 

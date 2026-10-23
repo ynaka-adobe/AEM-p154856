@@ -192,8 +192,6 @@ export async function handleRequest(request) {
       env.PUBLIC_ORIGIN = site.PUBLIC_ORIGIN;
       env.SITE = site;
       env.GUEST = site.guest;
-      // guest codes live in xsc-demo's protected sheet, so keep its token for that fetch only
-      env.CODES_TOKEN = env.SITE_TOKEN;
       // never send another site's origin credentials: use this site's own token, if any
       env.SITE_TOKEN = site.siteTokenKey ? await optionalSecret(site.siteTokenKey) : undefined;
     }

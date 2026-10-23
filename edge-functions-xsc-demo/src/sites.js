@@ -17,9 +17,14 @@ export const SITES = {
   // subdomain differs from the EDS repo name
   'fmc-dealer-communications.ynaka-adobe.com': {
     ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live',
-    // guest access codes: a code row in xsc-demo's demo-codes sheet whose path is grantPath
-    // unlocks the whole site (root '/'); anonymous visitors are sent to /access to enter it
-    guest: { grantPath: '/customer-demo/fmc-dealer-communications', root: '/', landing: '/access' },
+    // guest access codes: rows (code | customer | expires | notes) in the site's own
+    // employee-only sheet unlock the whole site (root '/'); anonymous visitors are sent
+    // to /access to enter one. The sheet is read from the preview origin with the site token.
+    guest: {
+      codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
+      root: '/',
+      landing: '/access',
+    },
   },
 };
 

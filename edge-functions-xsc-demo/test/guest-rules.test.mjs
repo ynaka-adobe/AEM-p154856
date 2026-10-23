@@ -33,6 +33,12 @@ test('a site-root grant (fmc-dealer) allows every path', () => {
   ['/', '/archive', '/preview', '/blocks/header/header.js'].forEach((p) => assert.equal(guestAllows(s, p), true));
 });
 
+test('a site-root grant never covers /internal (the code sheet)', () => {
+  const s = guest('/');
+  ['/internal/access-codes.json', '/internal/access-codes', '/internal', '/internal.json'].forEach((p) => assert.equal(guestAllows(s, p), false));
+  assert.equal(guestAllows(s, '/internal-news'), true);
+});
+
 test('non-guests and anonymous are never allowed by guest rules', () => {
   assert.equal(guestAllows(null, '/'), false);
   assert.equal(guestAllows({ guest: false, demos: [{ path: '/' }] }, '/'), false);
