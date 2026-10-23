@@ -15,7 +15,12 @@ const WILDCARD = /^([a-z0-9-]+)\.ynaka-adobe\.com$/;
 
 export const SITES = {
   // subdomain differs from the EDS repo name
-  'fmc-dealer-communications.ynaka-adobe.com': { ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live' },
+  'fmc-dealer-communications.ynaka-adobe.com': {
+    ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live',
+    // guest access codes: a code row in xsc-demo's demo-codes sheet whose path is grantPath
+    // unlocks the whole site (root '/'); anonymous visitors are sent to /access to enter it
+    guest: { grantPath: '/customer-demo/fmc-dealer-communications', root: '/', landing: '/access' },
+  },
 };
 
 /** Returns the site overrides for a hostname, or null for the default site. */
@@ -30,13 +35,20 @@ export function siteForHost(hostname) {
     PUBLIC_ORIGIN: `https://${host}`,
     // optional per-site aem.live site-authentication token (never reuse xsc-demo's)
     siteTokenKey: `XSC_${match[1].toUpperCase().replace(/-/g, '_')}_SITE_TOKEN`,
-    // xsc-demo-only features: guest access codes and Dynamic Media tokens
-    guestCodes: false,
+    // guest codes only on sites that opt in (above); Dynamic Media tokens are xsc-demo only
+    guest: site.guest || null,
   };
 }
 
 /** Auth routes that only exist on the default (xsc-demo) site. */
 export const DEFAULT_SITE_ONLY_ROUTES = new Set(['/auth/code', '/auth/demos', '/auth/dm-token']);
+
+/** Whether an /auth route is served for a site: extra sites get /auth/code only if they opt in. */
+export function authRouteAllowed(pathname, site) {
+  if (!site) return true;
+  if (pathname === '/auth/code') return !!site.guest;
+  return !DEFAULT_SITE_ONLY_ROUTES.has(pathname);
+}
 
 /**
  * Finds the site for a request. The CDN may hand the function an internal URL,

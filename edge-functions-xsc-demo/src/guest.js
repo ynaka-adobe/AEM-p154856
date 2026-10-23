@@ -12,8 +12,10 @@
 import { CacheOverride } from 'fastly:cache-override';
 import { signHS256 } from './jwt.js';
 import { getSession, safeReturnTo, SESSION_COOKIE } from './okta.js';
+import { guestAllows, normalizePath } from './guest-rules.js';
 
-const GUEST_ROOT = '/customer-demo/';
+export { guestAllows };
+
 const LANDING_PATH = '/customer-demo';
 const DEFAULT_GUEST_TTL = 8 * 60 * 60;
 
@@ -34,13 +36,6 @@ export const isEmployee = (session) => !!session && !session.guest;
 
 const normalizeCode = (c) => String(c || '').trim().toUpperCase();
 
-/** Demo paths are restricted to /customer-demo/<name> with no trailing slash. */
-function normalizePath(p) {
-  const path = `/${String(p || '').trim().replace(/^\/+|\/+$/g, '')}`;
-  if (!path.startsWith(GUEST_ROOT) || path.includes('..') || path.length <= GUEST_ROOT.length) return null;
-  return path;
-}
-
 /** End of the expiry day (UTC), in epoch seconds; null when there is no expiry. */
 function expiresAt(value) {
   const v = String(value || '').trim();
@@ -51,7 +46,8 @@ function expiresAt(value) {
 
 export async function loadCodes(env) {
   const resp = await fetch(env.CODES_URL, {
-    headers: env.SITE_TOKEN ? { authorization: `token ${env.SITE_TOKEN}` } : {},
+    // extra sites read xsc-demo's protected code sheet with xsc-demo's token (CODES_TOKEN)
+    headers: (env.CODES_TOKEN || env.SITE_TOKEN) ? { authorization: `token ${env.CODES_TOKEN || env.SITE_TOKEN}` } : {},
     cacheOverride: new CacheOverride('pass'),
   });
   if (!resp.ok) throw new Error(`demo codes fetch failed: ${resp.status}`);
@@ -71,36 +67,30 @@ export async function loadCodes(env) {
   }).filter((r) => r.code && r.path);
 }
 
-/** True when a guest session grants the request path. */
-export function guestAllows(session, pathname) {
-  if (!session?.guest) return false;
-  // media (media_<hash>.*) is stored next to the page and has unguessable names
-  if (/^\/customer-demo\/(.+\/)?media_[0-9a-f]+\.[a-z0-9]+$/i.test(pathname)) {
-    return (session.demos || []).length > 0;
-  }
-  return (session.demos || []).some(({ path }) => pathname === path
-    || pathname.startsWith(`${path}/`) || pathname.startsWith(`${path}.`));
-}
-
 /** POST /auth/code (form: code, returnTo) */
 export async function redeemCode(request, env) {
   if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
   const form = new URLSearchParams(await request.text());
   const code = normalizeCode(form.get('code'));
   const returnTo = safeReturnTo(form.get('returnTo') || '');
-  const back = (error) => redirect(`${LANDING_PATH}?error=${error}${returnTo !== '/' ? `&returnTo=${encodeURIComponent(returnTo)}` : ''}`);
+  const guest = env.GUEST || null; // per-site settings, see sites.js
+  const landing = guest ? guest.landing : LANDING_PATH;
+  const back = (error) => redirect(`${landing}?error=${error}${returnTo !== '/' ? `&returnTo=${encodeURIComponent(returnTo)}` : ''}`);
   if (!code) return back('missing');
 
-  const match = (await loadCodes(env)).find((r) => r.code === code);
+  // a site with its own guest settings only accepts codes granted to its demo page
+  const match = (await loadCodes(env))
+    .find((r) => r.code === code && (!guest || r.path === guest.grantPath));
   if (!match) return back('invalid');
   if (!match.active) return back('expired');
 
   const current = await getSession(request, env);
-  if (isEmployee(current)) return redirect(match.path);
+  const grantPath = guest ? guest.root : match.path;
+  if (isEmployee(current)) return redirect(grantPath);
 
   const now = Math.floor(Date.now() / 1000);
-  const demos = (current?.demos || []).filter((d) => d.path !== match.path);
-  demos.push({ customer: match.customer, path: match.path });
+  const demos = (current?.demos || []).filter((d) => d.path !== grantPath);
+  demos.push({ customer: match.customer, path: grantPath });
   const ttl = Number(env.SESSION_TTL) || DEFAULT_GUEST_TTL;
   const exp = Math.min(now + ttl, match.exp || Infinity, current?.exp || Infinity);
   const session = await signHS256({
@@ -113,7 +103,7 @@ export async function redeemCode(request, env) {
   }, env.SESSION_SECRET);
 
   const target = returnTo !== '/' && guestAllows({ guest: true, demos }, returnTo.split('?')[0])
-    ? returnTo : match.path;
+    ? returnTo : grantPath;
   return redirect(target, [sessionCookie(session, Math.max(exp - now, 60))]);
 }
 
