@@ -25,6 +25,7 @@ import {
   guestAllows, isEmployee, listDemos, redeemCode,
 } from './guest.js';
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
+import { DEFAULT_SITE_ONLY_ROUTES, siteForRequest } from './sites.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
@@ -118,6 +119,9 @@ async function handleAuthRoute(request, env, url) {
   if (missing.some((k) => k !== 'XSC_OKTA_CLIENT_SECRET')) {
     return new Response(`Okta is not configured, missing: ${missing.join(', ')}`, { status: 500 });
   }
+  if (env.GUEST_CODES === false && DEFAULT_SITE_ONLY_ROUTES.has(url.pathname)) {
+    return new Response('Not Found', { status: 404 });
+  }
   switch (url.pathname) {
     case '/auth/login': return login(request, env);
     case '/auth/callback': return callback(request, env);
@@ -181,6 +185,15 @@ export async function handleRequest(request) {
   const url = new URL(request.url);
   try {
     const env = await loadEnv();
+    const match = siteForRequest(request, url);
+    if (match) {
+      const { site } = match;
+      env.ORIGIN_HOSTNAME = site.ORIGIN_HOSTNAME;
+      env.PUBLIC_ORIGIN = site.PUBLIC_ORIGIN;
+      env.GUEST_CODES = site.guestCodes;
+      // never send another site's origin credentials: use this site's own token, if any
+      env.SITE_TOKEN = site.siteTokenKey ? await optionalSecret(site.siteTokenKey) : undefined;
+    }
     if (url.pathname.startsWith('/auth/')) return await handleAuthRoute(request, env, url);
     return await proxyWithCug(request, env, url);
   } catch (e) {

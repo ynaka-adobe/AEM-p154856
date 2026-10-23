@@ -20,6 +20,28 @@ How it works:
    Okta flow. The session is an HMAC-signed, HttpOnly cookie holding the user's
    email, name, Okta `groups` and `country`. ID tokens are verified against Okta's JWKS.
 
+## Additional sites
+
+The function serves any `*.ynaka-adobe.com` host that `cdn.yaml` routes to it,
+for example **fmcdealer.ynaka-adobe.com** (EDS site
+`ynaka-adobe/fmcdealer-communications`). `src/sites.js` resolves the site from
+the request host (forwarded-host headers first):
+
+- the public origin (Okta `redirect_uri` / `post_logout_redirect_uri`) is always
+  `https://<host>`; the Okta app uses wildcard redirect URIs
+  (`https://*.ynaka-adobe.com/auth/callback`), so a new host needs no Okta change;
+- the EDS origin is `main--<subdomain>--ynaka-adobe.aem.live`, unless the host
+  has an entry in `SITES` (needed when the subdomain differs from the repo name);
+- guest access codes and `/auth/dm-token` are disabled (404) on these hosts;
+- the aem.live site token is never shared with xsc-demo: set
+  `XSC_<SUBDOMAIN>_SITE_TOKEN` (e.g. `XSC_FMCDEALER_SITE_TOKEN`) only if site
+  authentication is enabled on that site;
+- sessions are per hostname (host-only cookies), so each host signs in separately.
+
+To add a site: add the domain in Cloud Manager, add a `route-<name>-cug` rule in
+`config-eds/cdn.yaml`, and (only if needed) a `SITES` entry. Hosts not routed
+here never reach the function.
+
 ## Attribute-based access (ABAC)
 
 The Groups column of the `closed-user-groups` sheet holds **attributes**, which
