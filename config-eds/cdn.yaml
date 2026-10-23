@@ -84,6 +84,13 @@ data:
           allOf:
             - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
         action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
+      # fmcdealer-communications (Ford) reuses the same function and Okta app;
+      # src/sites.js maps this host to its own EDS origin.
+      - name: route-fmcdealer-cug
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "fmcdealer.ynaka-adobe.com" }
+        action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
       # Parker product pages (series + nested SKU pages) are built on a
       # separate EDS site (ynaka-adobe/parker), not this AEM instance.
       # Scoped to parker.ynaka-adobe.com only, so it cannot match any

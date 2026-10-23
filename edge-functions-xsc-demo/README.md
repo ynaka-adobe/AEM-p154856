@@ -20,6 +20,21 @@ How it works:
    Okta flow. The session is an HMAC-signed, HttpOnly cookie holding the user's
    email, name, Okta `groups` and `country`. ID tokens are verified against Okta's JWKS.
 
+## Additional sites
+
+The function also serves **fmcdealer.ynaka-adobe.com** (EDS site
+`ynaka-adobe/fmcdealer-communications`). `src/sites.js` maps each extra
+hostname to its own origin and public URL; `cdn.yaml` has a matching
+`route-fmcdealer-cug` rule. Hosts not listed behave as xsc-demo. Per extra site:
+
+- the same Okta app and session secret are used (cookies are host-only, so each
+  hostname signs in separately);
+- guest access codes and `/auth/dm-token` are disabled (404);
+- the aem.live site token is never shared: set `XSC_FMCDEALER_SITE_TOKEN`
+  only if site authentication is enabled on that site;
+- add `https://<host>/auth/callback` and `https://<host>/` to the Okta app's
+  sign-in and sign-out redirect URIs, and add the domain in Cloud Manager.
+
 ## Attribute-based access (ABAC)
 
 The Groups column of the `closed-user-groups` sheet holds **attributes**, which
