@@ -23,7 +23,7 @@ How it works:
 ## Additional sites
 
 The function serves any `*.ynaka-adobe.com` host that `cdn.yaml` routes to it,
-for example **fmcdealer.ynaka-adobe.com** (EDS site
+for example **fmc-dealer-communications.ynaka-adobe.com** (EDS site
 `ynaka-adobe/fmcdealer-communications`). `src/sites.js` resolves the site from
 the request host (forwarded-host headers first):
 
@@ -34,7 +34,7 @@ the request host (forwarded-host headers first):
   has an entry in `SITES` (needed when the subdomain differs from the repo name);
 - guest access codes and `/auth/dm-token` are disabled (404) on these hosts;
 - the aem.live site token is never shared with xsc-demo: set
-  `XSC_<SUBDOMAIN>_SITE_TOKEN` (e.g. `XSC_FMCDEALER_SITE_TOKEN`) only if site
+  `XSC_<SUBDOMAIN>_SITE_TOKEN` (e.g. `XSC_FMC_DEALER_COMMUNICATIONS_SITE_TOKEN`) only if site
   authentication is enabled on that site;
 - sessions are per hostname (host-only cookies), so each host signs in separately.
 

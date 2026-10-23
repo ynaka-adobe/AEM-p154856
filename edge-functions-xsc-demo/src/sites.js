@@ -15,7 +15,7 @@ const WILDCARD = /^([a-z0-9-]+)\.ynaka-adobe\.com$/;
 
 export const SITES = {
   // subdomain differs from the EDS repo name
-  'fmcdealer.ynaka-adobe.com': { ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live' },
+  'fmc-dealer-communications.ynaka-adobe.com': { ORIGIN_HOSTNAME: 'main--fmcdealer-communications--ynaka-adobe.aem.live' },
 };
 
 /** Returns the site overrides for a hostname, or null for the default site. */
