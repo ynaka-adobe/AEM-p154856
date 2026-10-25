@@ -85,3 +85,13 @@ test('client id comes from the CDN header and is address-safe', () => {
   assert.equal(clientId(h({})), '');
   assert.equal(clientId(null), '');
 });
+
+test('draft saves: PUT /drafts/{well-formed id} only, and it counts as a write', () => {
+  const ok = matchApi('/api/fmc/drafts/DRAFT-20261025101500-ab12', 'PUT');
+  assert.deepEqual(ok, { path: '/drafts/DRAFT-20261025101500-ab12', write: true });
+  assert.equal(authorize({ guest: true }, ok, { read: 'anonymous', write: 'employee' }).status, 403);
+  ['GET', 'POST', 'DELETE'].forEach((m) => assert.equal(matchApi('/api/fmc/drafts/DRAFT-20261025101500-ab12', m), null));
+  ['/api/fmc/drafts', '/api/fmc/drafts/', '/api/fmc/drafts/EFC260061', '/api/fmc/drafts/DRAFT-2026-ab12',
+    '/api/fmc/drafts/DRAFT-20261025101500-AB12', '/api/fmc/drafts/DRAFT-20261025101500-ab12/x',
+    '/api/fmc/drafts/../communications'].forEach((p) => assert.equal(matchApi(p, 'PUT'), null, p));
+});
