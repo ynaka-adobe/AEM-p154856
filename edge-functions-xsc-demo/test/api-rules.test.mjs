@@ -11,6 +11,10 @@ test('only the documented routes and methods match', () => {
   assert.ok(matchApi('/api/fmc/communications/DRAFT-20261022140000-ab1c/status', 'GET'));
   ['DELETE', 'PUT', 'PATCH'].forEach((m) => assert.equal(matchApi('/api/fmc/communications', m), null));
   assert.equal(matchApi('/api/fmc/communications/EFC1', 'POST'), null);
+  // demo review actions: a write route for one id, POST only
+  assert.deepEqual(matchApi('/api/fmc/communications/DRAFT-20261022140000-ab1c/review', 'POST'), { path: '/communications/DRAFT-20261022140000-ab1c/review', write: true });
+  ['GET', 'PUT', 'DELETE'].forEach((m) => assert.equal(matchApi('/api/fmc/communications/EFC1/review', m), null));
+  ['/api/fmc/communications/review', '/api/fmc/communications//review', '/api/fmc/communications/a/b/review', '/api/fmc/communications/EFC1/review/x'].forEach((p) => assert.equal(matchApi(p, 'POST'), null, p));
   assert.equal(matchApi('/api/fmc/other', 'GET'), null);
   assert.equal(matchApi('/api/fmc/', 'GET'), null);
   assert.equal(matchApi('/api/other/communications', 'GET'), null);
