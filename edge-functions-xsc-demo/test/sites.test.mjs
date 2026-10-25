@@ -1,12 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { siteForHost, DEFAULT_SITE_ONLY_ROUTES } from '../src/sites.js';
+import { siteForHost, DEFAULT_SITE_ONLY_ROUTES, authRouteAllowed } from '../src/sites.js';
 
 test('fmcdealer host resolves to its own origin and public URL', () => {
   const site = siteForHost('fmc-dealer-communications.ynaka-adobe.com');
   assert.equal(site.ORIGIN_HOSTNAME, 'main--fmcdealer-communications--ynaka-adobe.aem.live');
   assert.equal(site.PUBLIC_ORIGIN, 'https://fmc-dealer-communications.ynaka-adobe.com');
-  assert.equal(site.guestCodes, false);
+  assert.deepEqual(site.guest, {
+    codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
+    root: '/',
+    landing: '/access',
+  });
   assert.equal(site.siteTokenKey, 'XSC_FMC_DEALER_COMMUNICATIONS_SITE_TOKEN');
 });
 
@@ -36,6 +40,17 @@ test('xsc-demo and unknown hosts use the default site', () => {
 test('guest-code and DM routes are default-site only', () => {
   ['/auth/code', '/auth/demos', '/auth/dm-token'].forEach((r) => assert.ok(DEFAULT_SITE_ONLY_ROUTES.has(r)));
   assert.ok(!DEFAULT_SITE_ONLY_ROUTES.has('/auth/login'));
+});
+
+test('extra sites serve /auth/code only when they opt in to guest codes', () => {
+  const optedIn = siteForHost('fmc-dealer-communications.ynaka-adobe.com');
+  const other = siteForHost('acme-demo.ynaka-adobe.com');
+  assert.equal(authRouteAllowed('/auth/code', optedIn), true);
+  assert.equal(authRouteAllowed('/auth/code', other), false);
+  assert.equal(authRouteAllowed('/auth/code', null), true);
+  assert.equal(authRouteAllowed('/auth/demos', optedIn), false);
+  assert.equal(authRouteAllowed('/auth/dm-token', optedIn), false);
+  assert.equal(authRouteAllowed('/auth/login', other), true);
 });
 
 import { siteForRequest } from '../src/sites.js';

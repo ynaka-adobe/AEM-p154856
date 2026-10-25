@@ -32,7 +32,14 @@ the request host (forwarded-host headers first):
   (`https://*.ynaka-adobe.com/auth/callback`), so a new host needs no Okta change;
 - the EDS origin is `main--<subdomain>--ynaka-adobe.aem.live`, unless the host
   has an entry in `SITES` (needed when the subdomain differs from the repo name);
-- guest access codes and `/auth/dm-token` are disabled (404) on these hosts;
+- guest access codes and `/auth/dm-token` are disabled (404) on these hosts, unless the
+  site opts in with `guest` in `src/sites.js`. **fmc-dealer-communications** does, with its
+  **own** code sheet: `/internal/access-codes` in that site (columns `code | customer |
+  expires | notes`). A valid code starts a guest session for the whole site (`root: '/'`,
+  except `/internal`); failures return to `/access`. The sheet is read from the site's
+  preview origin with the site's own token, so site authentication must be on for that
+  site (otherwise the sheet is publicly readable) and `XSC_FMC_DEALER_COMMUNICATIONS_SITE_TOKEN`
+  must be set;
 - the aem.live site token is never shared with xsc-demo: set
   `XSC_<SUBDOMAIN>_SITE_TOKEN` (e.g. `XSC_FMC_DEALER_COMMUNICATIONS_SITE_TOKEN`) only if site
   authentication is enabled on that site;
