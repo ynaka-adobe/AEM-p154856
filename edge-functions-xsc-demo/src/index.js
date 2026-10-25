@@ -26,6 +26,9 @@ import {
 } from './guest.js';
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
 import { authRouteAllowed, siteForRequest } from './sites.js';
+import {
+  API_PREFIX, authorize, checkWrite, matchApi, userId,
+} from './api-rules.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
 const CUG_GROUPS_HEADER = 'x-aem-cug-groups';
@@ -181,6 +184,46 @@ async function proxyWithCug(request, env, url) {
   return new Response(originResp.body, { status: originResp.status, headers: respHeaders });
 }
 
+/** /api/fmc: authenticate, then forward to the communications service with the shared secret. */
+async function handleApi(request, env, url) {
+  const json = (status, body) => new Response(JSON.stringify(body), {
+    status, headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' },
+  });
+  if (!env.API) return json(404, { error: 'not found' });
+  const route = matchApi(url.pathname, request.method);
+  if (!route) return json(404, { error: 'not found' });
+  const session = env.SESSION_SECRET ? await getSession(request, env) : null;
+  const allowed = authorize(session, route);
+  if (!allowed.ok) return json(allowed.status, { error: allowed.error });
+  if (!env.API_SECRET) return json(503, { error: 'service not configured' });
+
+  let body;
+  if (route.write) {
+    const text = await request.text();
+    const checked = checkWrite(request.headers.get('content-type'), text.length);
+    if (!checked.ok) return json(checked.status, { error: checked.error });
+    body = text;
+  }
+  const headers = {
+    'x-fmc-key': env.API_SECRET,
+    'x-fmc-user': userId(session),
+    accept: 'application/json',
+  };
+  if (route.write) headers['content-type'] = 'application/json';
+  try {
+    const upstream = await fetch(`${env.API.upstream}${route.path}${url.search}`, {
+      method: request.method, headers, body, cacheOverride: new CacheOverride('pass'),
+    });
+    return new Response(await upstream.text(), {
+      status: upstream.status,
+      headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' },
+    });
+  } catch (e) {
+    console.error(`fmc api upstream error: ${e && e.message}`);
+    return json(502, { error: 'upstream error' });
+  }
+}
+
 export async function handleRequest(request) {
   const url = new URL(request.url);
   try {
@@ -192,10 +235,13 @@ export async function handleRequest(request) {
       env.PUBLIC_ORIGIN = site.PUBLIC_ORIGIN;
       env.SITE = site;
       env.GUEST = site.guest;
+      env.API = site.api;
+      env.API_SECRET = site.api ? await optionalSecret(site.api.secretKey) : undefined;
       // never send another site's origin credentials: use this site's own token, if any
       env.SITE_TOKEN = site.siteTokenKey ? await optionalSecret(site.siteTokenKey) : undefined;
     }
     if (url.pathname.startsWith('/auth/')) return await handleAuthRoute(request, env, url);
+    if (url.pathname.startsWith(`${API_PREFIX}/`)) return await handleApi(request, env, url);
     return await proxyWithCug(request, env, url);
   } catch (e) {
     console.error(`xsc-demo-cug error: ${e && e.message}`);

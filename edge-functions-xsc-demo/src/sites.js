@@ -20,6 +20,12 @@ export const SITES = {
     // guest access codes: rows (code | customer | expires | notes) in the site's own
     // employee-only sheet unlock the whole site (root '/'); anonymous visitors are sent
     // to /access to enter one. The sheet is read from the preview origin with the site token.
+    // communications service (App Builder action in front of AEM Author); the browser reaches it
+    // only through /api/fmc, which this function authenticates and forwards (see api-rules.js)
+    api: {
+      upstream: 'https://332794-assetsfanout-stage.adobeioruntime.net/api/v1/web/toyota-assets-fanout/fmc-communications',
+      secretKey: 'XSC_FMC_API_SECRET',
+    },
     guest: {
       codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
       root: '/',
@@ -42,6 +48,7 @@ export function siteForHost(hostname) {
     siteTokenKey: `XSC_${match[1].toUpperCase().replace(/-/g, '_')}_SITE_TOKEN`,
     // guest codes only on sites that opt in (above); Dynamic Media tokens are xsc-demo only
     guest: site.guest || null,
+    api: site.api || null,
   };
 }
 
