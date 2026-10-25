@@ -56,7 +56,8 @@ communications service (an App Builder action, `fmc-communications`, in front of
 The browser never sees the service URL or any AEM credential.
 
 - Routes are an allow-list (`src/api-rules.js`): `GET /communications`, `POST /communications`,
-  `GET /communications/{name}` and `GET /communications/{name}/status`. Anything else is 404.
+  `GET /communications/{name}`, `GET /communications/{name}/status` and `PUT /drafts/{id}` (saves a
+  draft's form progress to a sheet; `{id}` must look like `DRAFT-<14 digits>-<4 chars>`). Anything else is 404.
 - Access is a per-site policy (`api.access` in `src/sites.js`): `read` and `write` are each
   `anonymous`, `session` (any signed-in user, including code guests) or `employee`. The default
   is `session` to read and `employee` to write. fmc-dealer-communications is currently

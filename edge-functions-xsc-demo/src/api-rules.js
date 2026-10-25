@@ -14,6 +14,8 @@ const ROUTES = [
   { method: 'POST', re: /^\/communications$/, write: true },
   { method: 'GET', re: new RegExp(`^/communications/${NAME}$`) },
   { method: 'GET', re: new RegExp(`^/communications/${NAME}/status$`) },
+  // save a draft's form progress (the service stores it in a sheet; no AEM call)
+  { method: 'PUT', re: /^\/drafts\/DRAFT-\d{14}-[a-z0-9]{4}$/, write: true },
 ];
 
 /** Returns { path, write } for an allowed request, or null. path is relative to the API prefix. */
