@@ -49,6 +49,21 @@ To add a site: add the domain in Cloud Manager, add a `route-<name>-cug` rule in
 `config-eds/cdn.yaml`, and (only if needed) a `SITES` entry. Hosts not routed
 here never reach the function.
 
+### Communications API proxy (`/api/fmc`)
+
+On fmc-dealer-communications the function also proxies `/api/fmc/communications...` to the
+communications service (an App Builder action, `fmc-communications`, in front of AEM Author).
+The browser never sees the service URL or any AEM credential.
+
+- Routes are an allow-list (`src/api-rules.js`): `GET /communications`, `POST /communications`,
+  `GET /communications/{name}` and `GET /communications/{name}/status`. Anything else is 404.
+- A signed-in session is required. Guests (access code) can read but not create.
+- `POST` must be `application/json` and at most 256 KB.
+- The service call carries `x-fmc-key` (shared secret, `XSC_FMC_API_SECRET` in `.env`; must equal
+  the action's `FMC_ACTION_SECRET`) and `x-fmc-user` (the CDSID from the session). Without the
+  secret the proxy answers 503; it does not forward unauthenticated.
+- The site switches from sample data to this API with page metadata `communications-api` = `/api/fmc`.
+
 ## Attribute-based access (ABAC)
 
 The Groups column of the `closed-user-groups` sheet holds **attributes**, which
