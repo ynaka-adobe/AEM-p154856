@@ -29,6 +29,8 @@ export const SITES = {
       // Set both to 'session' (or write to 'employee') when sign-in is turned on.
       access: { read: 'anonymous', write: 'anonymous' },
     },
+    // code files revalidate quickly while the demo is being built (origin default is 2 hours)
+    codeCache: { maxAge: 15 },
     guest: {
       codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
       root: '/',
@@ -52,6 +54,7 @@ export function siteForHost(hostname) {
     // guest codes only on sites that opt in (above); Dynamic Media tokens are xsc-demo only
     guest: site.guest || null,
     api: site.api || null,
+    codeCache: site.codeCache || null,
   };
 }
 
