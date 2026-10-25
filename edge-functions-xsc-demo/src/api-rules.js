@@ -24,14 +24,30 @@ export function matchApi(pathname, method) {
   return hit ? { path, write: !!hit.write } : null;
 }
 
+/** Default policy when a site does not set one: sign-in to read, employees to write. */
+export const DEFAULT_ACCESS = { read: 'session', write: 'employee' };
+
 /**
- * Who may call: any signed-in session may read; only employees (not code-based guests) may write.
+ * Who may call, per site policy `access` = { read, write } where each is one of
+ *   'anonymous'  no sign-in needed
+ *   'session'    any signed-in session (employees and code-based guests)
+ *   'employee'   signed-in employees only (not code-based guests)
+ * Anonymous access to writes is bounded by the service itself (see the service's limits).
  * @returns {{ok:true}|{ok:false,status:number,error:string}}
  */
-export function authorize(session, route) {
+export function authorize(session, route, access = DEFAULT_ACCESS) {
+  const level = (route.write ? access.write : access.read) || DEFAULT_ACCESS[route.write ? 'write' : 'read'];
+  if (level === 'anonymous') return { ok: true };
   if (!session) return { ok: false, status: 401, error: 'sign in required' };
-  if (route.write && session.guest) return { ok: false, status: 403, error: 'guests cannot create communications' };
+  if (level === 'employee' && session.guest) return { ok: false, status: 403, error: 'guests cannot create communications' };
   return { ok: true };
+}
+
+/** Caller address for the service's per-caller limits; empty when the CDN does not provide it. */
+export function clientId(headers) {
+  const v = String((headers && headers.get && (headers.get('fastly-client-ip') || headers.get('x-forwarded-for'))) || '').split(',')[0].trim();
+  // an address or nothing: never forward anything else as the caller id
+  return /^[0-9a-fA-F:.]{2,45}$/.test(v) ? v : '';
 }
 
 /** A short, header-safe user id for the service: the CDSID (email local part) or subject. */

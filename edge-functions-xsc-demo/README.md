@@ -57,7 +57,12 @@ The browser never sees the service URL or any AEM credential.
 
 - Routes are an allow-list (`src/api-rules.js`): `GET /communications`, `POST /communications`,
   `GET /communications/{name}` and `GET /communications/{name}/status`. Anything else is 404.
-- A signed-in session is required. Guests (access code) can read but not create.
+- Access is a per-site policy (`api.access` in `src/sites.js`): `read` and `write` are each
+  `anonymous`, `session` (any signed-in user, including code guests) or `employee`. The default
+  is `session` to read and `employee` to write. fmc-dealer-communications is currently
+  `anonymous` for both because the site is anonymous; switch to `session` / `employee` when
+  sign-in is turned on. Anonymous creates are capped by the service (5 per caller per hour,
+  100 per day in total), using the caller address forwarded as `x-fmc-client`.
 - `POST` must be `application/json` and at most 256 KB.
 - The service call carries `x-fmc-key` (shared secret, `XSC_FMC_API_SECRET` in `.env`; must equal
   the action's `FMC_ACTION_SECRET`) and `x-fmc-user` (the CDSID from the session). Without the
