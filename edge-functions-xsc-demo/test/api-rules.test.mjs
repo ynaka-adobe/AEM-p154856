@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  authorize, checkWrite, matchApi, userId, MAX_BODY,
+  authorize, checkWrite, clientId, matchApi, userId, MAX_BODY,
 } from '../src/api-rules.js';
 
 test('only the documented routes and methods match', () => {
@@ -47,4 +47,41 @@ test('writes need JSON and a bounded body', () => {
   assert.equal(checkWrite('application/x-www-form-urlencoded', 10).status, 415);
   assert.equal(checkWrite(null, 10).status, 415);
   assert.equal(checkWrite('application/json', MAX_BODY + 1).status, 413);
+});
+
+test('per-site policy: anonymous, session or employee for reads and writes', () => {
+  const read = matchApi('/api/fmc/communications', 'GET');
+  const write = matchApi('/api/fmc/communications', 'POST');
+  const open = { read: 'anonymous', write: 'anonymous' };
+  assert.equal(authorize(null, read, open).ok, true);
+  assert.equal(authorize(null, write, open).ok, true);
+  assert.equal(authorize({ guest: true }, write, open).ok, true);
+
+  const readOnly = { read: 'anonymous', write: 'session' };
+  assert.equal(authorize(null, read, readOnly).ok, true);
+  assert.equal(authorize(null, write, readOnly).status, 401);
+  assert.equal(authorize({ guest: true }, write, readOnly).ok, true);
+
+  const strict = { read: 'session', write: 'employee' };
+  assert.equal(authorize(null, read, strict).status, 401);
+  assert.equal(authorize({ guest: true }, write, strict).status, 403);
+  assert.equal(authorize({ email: 'a@ford.com' }, write, strict).ok, true);
+
+  // an unset or unknown level falls back to the strict default rather than opening up
+  assert.equal(authorize(null, read, {}).status, 401);
+  assert.equal(authorize(null, write, { write: 'whatever' }).status, 401);
+});
+
+test('client id comes from the CDN header and is address-safe', () => {
+  const h = (o) => new Headers(o);
+  assert.equal(clientId(h({ 'fastly-client-ip': '203.0.113.7' })), '203.0.113.7');
+  assert.equal(clientId(h({ 'x-forwarded-for': '198.51.100.2, 10.0.0.1' })), '198.51.100.2');
+  assert.equal(clientId(h({ 'fastly-client-ip': '2001:db8::1' })), '2001:db8::1');
+  // a stand-in object can carry characters that a real Headers object would reject
+  assert.equal(clientId({ get: () => 'zz198.51.100.2\r\n; x-evil: 1' }), '', 'not an address -> nothing');
+  assert.equal(clientId({ get: () => '198.51.100.2\r\nx-evil: 1' }), '');
+  assert.equal(clientId({ get: () => 'a'.repeat(100) }), '', 'too long -> nothing');
+  assert.equal(clientId({ get: () => '  198.51.100.2  ' }), '198.51.100.2');
+  assert.equal(clientId(h({})), '');
+  assert.equal(clientId(null), '');
 });

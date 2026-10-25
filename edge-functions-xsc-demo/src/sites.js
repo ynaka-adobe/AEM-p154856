@@ -25,6 +25,9 @@ export const SITES = {
     api: {
       upstream: 'https://332794-assetsfanout-stage.adobeioruntime.net/api/v1/web/toyota-assets-fanout/fmc-communications',
       secretKey: 'XSC_FMC_API_SECRET',
+      // The site is anonymous for now, so the API is too. The service caps anonymous creates.
+      // Set both to 'session' (or write to 'employee') when sign-in is turned on.
+      access: { read: 'anonymous', write: 'anonymous' },
     },
     guest: {
       codesUrl: 'https://main--fmcdealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',

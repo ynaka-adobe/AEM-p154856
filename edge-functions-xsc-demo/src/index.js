@@ -27,7 +27,7 @@ import {
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
 import { authRouteAllowed, siteForRequest } from './sites.js';
 import {
-  API_PREFIX, authorize, checkWrite, matchApi, userId,
+  API_PREFIX, authorize, checkWrite, clientId, matchApi, userId,
 } from './api-rules.js';
 
 const CUG_REQUIRED_HEADER = 'x-aem-cug-required';
@@ -193,7 +193,7 @@ async function handleApi(request, env, url) {
   const route = matchApi(url.pathname, request.method);
   if (!route) return json(404, { error: 'not found' });
   const session = env.SESSION_SECRET ? await getSession(request, env) : null;
-  const allowed = authorize(session, route);
+  const allowed = authorize(session, route, env.API.access);
   if (!allowed.ok) return json(allowed.status, { error: allowed.error });
   if (!env.API_SECRET) return json(503, { error: 'service not configured' });
 
@@ -207,6 +207,7 @@ async function handleApi(request, env, url) {
   const headers = {
     'x-fmc-key': env.API_SECRET,
     'x-fmc-user': userId(session),
+    'x-fmc-client': clientId(request.headers),
     accept: 'application/json',
   };
   if (route.write) headers['content-type'] = 'application/json';
