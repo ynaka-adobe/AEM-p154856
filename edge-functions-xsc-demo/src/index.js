@@ -26,6 +26,7 @@ import {
 } from './guest.js';
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
 import { authRouteAllowed, siteForRequest } from './sites.js';
+import { codeCacheControl } from './cache-rules.js';
 import {
   API_PREFIX, authorize, checkWrite, clientId, matchApi, userId,
 } from './api-rules.js';
@@ -181,6 +182,8 @@ async function proxyWithCug(request, env, url) {
   }
 
   respHeaders.delete('age');
+  const codeCache = codeCacheControl(env.SITE, url.pathname, request.method, originResp.status);
+  if (codeCache) respHeaders.set('cache-control', codeCache);
   return new Response(originResp.body, { status: originResp.status, headers: respHeaders });
 }
 
