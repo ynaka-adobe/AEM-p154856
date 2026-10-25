@@ -14,6 +14,8 @@ const ROUTES = [
   { method: 'POST', re: /^\/communications$/, write: true },
   { method: 'GET', re: new RegExp(`^/communications/${NAME}$`) },
   { method: 'GET', re: new RegExp(`^/communications/${NAME}/status$`) },
+  // demo review actions (move a communication through its workflow); the service checks a demo code
+  { method: 'POST', re: new RegExp(`^/communications/${NAME}/review$`), write: true },
   // save a draft's form progress (the service stores it in a sheet; no AEM call)
   { method: 'PUT', re: /^\/drafts\/DRAFT-\d{14}-[a-z0-9]{4}$/, write: true },
 ];
