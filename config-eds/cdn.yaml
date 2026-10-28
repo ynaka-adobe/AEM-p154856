@@ -91,6 +91,13 @@ data:
           allOf:
             - { reqProperty: domain, equals: "fmc-dealer-communications.ynaka-adobe.com" }
         action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
+      # dealer-communications (generic copy of the communications demo) reuses the same
+      # function; src/sites.js maps this host to its own EDS origin.
+      - name: route-dealer-communications-cug
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "dealer-communications.ynaka-adobe.com" }
+        action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
       # Parker product pages (series + nested SKU pages) are built on a
       # separate EDS site (ynaka-adobe/parker), not this AEM instance.
       # Scoped to parker.ynaka-adobe.com only, so it cannot match any

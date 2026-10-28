@@ -24,7 +24,8 @@ How it works:
 
 The function serves any `*.ynaka-adobe.com` host that `cdn.yaml` routes to it,
 for example **fmc-dealer-communications.ynaka-adobe.com** (EDS site
-`ynaka-adobe/fmcdealer-communications`). `src/sites.js` resolves the site from
+`ynaka-adobe/fmcdealer-communications`) and **dealer-communications.ynaka-adobe.com** (EDS site
+`ynaka-adobe/dealer-communications`, guest codes and the `/api/fmc` proxy to its own App Builder service; secret `XSC_DEALER_COMMUNICATIONS_API_SECRET` must equal the service's `DC_ACTION_SECRET`). `src/sites.js` resolves the site from
 the request host (forwarded-host headers first):
 
 - the public origin (Okta `redirect_uri` / `post_logout_redirect_uri`) is always

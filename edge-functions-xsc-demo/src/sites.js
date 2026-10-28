@@ -37,6 +37,24 @@ export const SITES = {
       landing: '/access',
     },
   },
+  // generic copy of the communications demo (EDS site ynaka-adobe/dealer-communications)
+  'dealer-communications.ynaka-adobe.com': {
+    ORIGIN_HOSTNAME: 'main--dealer-communications--ynaka-adobe.aem.live',
+    // communications service: App Builder project dealercommunications (Stage workspace), reached only
+    // through /api/fmc, which this function authenticates and forwards (see api-rules.js)
+    api: {
+      upstream: 'https://332794-dealercommunications-stage.adobeioruntime.net/api/v1/web/dealer-communications/communications',
+      secretKey: 'XSC_DEALER_COMMUNICATIONS_API_SECRET',
+      // anonymous site: the API is anonymous too. The service caps anonymous creates.
+      access: { read: 'anonymous', write: 'anonymous' },
+    },
+    codeCache: { maxAge: 15 },
+    guest: {
+      codesUrl: 'https://main--dealer-communications--ynaka-adobe.aem.page/internal/access-codes.json',
+      root: '/',
+      landing: '/access',
+    },
+  },
 };
 
 /** Returns the site overrides for a hostname, or null for the default site. */

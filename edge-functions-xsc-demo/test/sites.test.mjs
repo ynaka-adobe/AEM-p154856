@@ -66,3 +66,14 @@ test('siteForRequest falls back to the URL host and returns null otherwise', () 
   assert.ok(siteForRequest(req({}), new URL('https://fmc-dealer-communications.ynaka-adobe.com/x')));
   assert.equal(siteForRequest(req({ host: 'xsc-demo.ynaka-adobe.com' }), new URL('https://x.aem.network/')), null);
 });
+
+test('dealer-communications host resolves to its own origin and opts in to guest codes', () => {
+  const site = siteForHost('dealer-communications.ynaka-adobe.com');
+  assert.equal(site.ORIGIN_HOSTNAME, 'main--dealer-communications--ynaka-adobe.aem.live');
+  assert.equal(site.PUBLIC_ORIGIN, 'https://dealer-communications.ynaka-adobe.com');
+  assert.equal(site.guest.codesUrl, 'https://main--dealer-communications--ynaka-adobe.aem.page/internal/access-codes.json');
+  assert.equal(site.api.upstream, 'https://332794-dealercommunications-stage.adobeioruntime.net/api/v1/web/dealer-communications/communications');
+  assert.equal(site.api.secretKey, 'XSC_DEALER_COMMUNICATIONS_API_SECRET');
+  assert.deepEqual(site.api.access, { read: 'anonymous', write: 'anonymous' });
+  assert.equal(site.siteTokenKey, 'XSC_DEALER_COMMUNICATIONS_SITE_TOKEN');
+});
