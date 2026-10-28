@@ -6,3 +6,5 @@ data:
   allowedClientIDs:
     author:
       - "cf778cdcea774f518833f22b5bd4c5da"
+      # Dealer Communications service (App Builder project dealercommunications, Stage)
+      - "d5cecf0ede8843108a0b7d120fb24b81"
