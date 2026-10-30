@@ -124,6 +124,19 @@ data:
           skipCache: true
           headers:
             X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
+      - name: route-chevron-delo-syn-trans-xe
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-trans-xe" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_8c90e2b40526fb1677b313d1c434513f5dcb7d8c.png" }
+        action:
+          type: selectOrigin
+          originName: chevron-edge-commerce-pilot
+          skipCache: true
+          headers:
+            X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
       - name: 3m-www
         domain: www.3m.com
