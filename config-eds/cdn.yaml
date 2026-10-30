@@ -111,6 +111,19 @@ data:
           type: selectOrigin
           originName: parker-eds
           skipCache: true
+      - name: route-chevron-edge-commerce-pilot
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: originalPath, equals: "/edge-commerce/products/delo-600-adf-15w-40" }
+                - { reqProperty: originalPath, equals: "/edge-commerce/products/media_d8320c16ba6e000b2cb939cd08c2fa9d06c5a5b1.png" }
+        action:
+          type: selectOrigin
+          originName: chevron-edge-commerce-pilot
+          skipCache: true
+          headers:
+            X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
       - name: 3m-www
         domain: www.3m.com
@@ -124,6 +137,11 @@ data:
         forwardAuthorization: true
       - name: parker-eds
         domain: main--parker--ynaka-adobe.aem.network
+        forwardHost: false
+        forwardCookie: true
+        forwardAuthorization: true
+      - name: chevron-edge-commerce-pilot
+        domain: main--chevronlubricants--ynaka-adobe.aem.network
         forwardHost: false
         forwardCookie: true
         forwardAuthorization: true
