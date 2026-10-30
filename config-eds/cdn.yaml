@@ -137,6 +137,94 @@ data:
           skipCache: true
           headers:
             X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
+      - name: route-chevron-delo-catalog
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-100-motor-oils" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-1000-marine" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-sng" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xle-sae-10w-30" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xle-sb-15w-40" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xsp-15w-40" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xsp-fa-5w-30" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xsp-sae-5w-30" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-xsp-sae-5w-40" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-400-zfa-sae-10w-30" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-600-adf-10w-30" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-600-adf-15w-40" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-710-ls" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-elc-advanced-antifreezecoolant-5050" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-elc-antifreeze-coolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-elc-pg-antifreezecoolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-eli-corrosion-inhibitor" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-extreme-ep-5" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-gear-esi-sae-80w-90" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-gear-esi-sae-85w-140" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-amt-xdt-sae-75w-90" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-atf-668" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-atf-hd" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-gear-hd-sae-75w-90" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-gear-xda" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-gear-xdm-sae-75w-90-80w-140" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-grease-sfe-ep-0" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-tdl-75w-90" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-thf-xc" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-trans-hd-sae-50" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-syn-trans-xv-sae-75w-80" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-torqforce" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-torqforce-fd" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-torqforce-mp" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-torqforce-syn" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-torqforce-syn-fd-1" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-xlc-antifreeze-coolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/delo-xli-corrosion-inhibitor-concentrate" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_0b7a6603eafb190146f955d37a9bea78a5164913.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_158f941fe8fa45c8cd2476f984254ff517ac92ad.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_1725bd535eb0f3087f3baee40a4b1f57f2280918.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_1f956be33139d6833f0e5464d40db2637fdb43ad.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_20f96b9e70d8bdaf5ed09dbcc28a82c37ecbb435.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_227a5c1acfffc424942571774f25dd431fdf5c4f.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_25a71ec79cad00bb8cada40c8249378f895df679.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_2bf6ed4bd1eac747abc0e99a16bf11d57867317d.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_361c47bc4d1ee80bae76ad8c468beccce55babb6.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_39661432e2826731becbb302df73bf5be43b8110.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_3fa041c51b86dc1dfd6ad00348f1429fdd43c956.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_44232938d7ff76028e30912cdef4c74c16622fea.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_4a692676a9e308f527df5b9e2efd8b9ac1b7e04e.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_53b92ab132f75d36cbe1b90b272702ef0be09a5f.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_5c0417314647a2593da049cf2fbb37a80e662a24.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_5ec8aed3b528dafec37cc5f06257c8e2a7090580.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_5f05b657bd875246dec847714b8312e96e9f87b1.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_6cae770d0c679755c1a1889bec2acd5be22bc2e5.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_77781fcbc2b8f918dcd72867b9d5bf4e7485419b.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7a1e7ca516df896af93a54d7fe2c6bd39c22572e.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7a2d647ca3347336a855790421514a1829007031.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7a41989200cd2a510a6482c8d683826fd7583479.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7c40dc92b0ea886c228d4167e2408a29717b5de5.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7facbc435fd62d3734a3a30a52183697a7bce3cb.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_81049b77155f1fc7ee696aaa09e05a25ac163db0.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_86f7bc4d1a7952de4a3ca0412646ff55d939c6ae.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_b641ca2f85bf0160be954ca840c50fb5cda151f1.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_b7e008e7d882c41f816c3517a7fc3806f70cc91c.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_bb102f0f58e625d70727211d936602cfb1a387a6.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_c0bb7006e46b99be531ba0f2146bb4f2f938f060.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_c1b1c218d5d1a827698e6a0082a0dcc7c0a65694.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_d295dcc66d3b5f877c0e99a4c4a722916a66de9b.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_d4081f8c1699b028f2b15c12fa28497d601bf0f1.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_d8320c16ba6e000b2cb939cd08c2fa9d06c5a5b1.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_e196af7972963b6baa4808cf6fd9dc0ebc679089.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_e68c292c298ffba260c94556aa7f196413d0a820.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_f59d64cf0c98fe96ce826682212bb3291dd2c9aa.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_f7bfca82985af9cdf38067adf9440024050a6594.png" }
+        action:
+          type: selectOrigin
+          originName: chevron-edge-commerce-pilot
+          skipCache: true
+          headers:
+            X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
       - name: 3m-www
         domain: www.3m.com
