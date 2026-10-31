@@ -225,6 +225,51 @@ data:
           skipCache: true
           headers:
             X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
+      - name: route-chevron-havoline-catalog
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-2-cycle-engine-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-automatic-transmission-fluid-md-3" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-automatic-transmission-fluid-type-f" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-conventional-antifreezecoolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-cvt-plus" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-full-synthetic-multi-vehicle-atf" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-global-multi-vehicle-atf" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-high-mileage-synblend-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-lifelong-full-synthetic-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-power-steering-fluid" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-pro-ds-full-synthetic-euro-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-pro-ds-full-synthetic-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-synblend-dx-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-synblend-motor-oil" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-universal-antifreezecoolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/havoline-xtended-life-antifreezecoolant" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_118acc983740369d3d2cba250a11f9e11f30a78c.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_46adfd22101beb8e34744c511b83a6ee3b88d666.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_53b325f53c9df42e0c26da3465d51311053354d4.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_5430ad650697cb948d19836bae19167b46340d51.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_607e09b697d0dfde30639e0e31486bf92a6f66e6.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_6b6f15f986bac42255b0bd46d38d5a9fb42b84ec.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_71726b9715d755b4b0cc7ebb68646802774595fe.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_7b76218412488603a6a1eaa80a15cddc9cc2b62e.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_81d809959f9c5f57edd5ad39bcd92e2b9f393184.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_8292f16372627c1a4015834d30745319fae0e4cc.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_a0615927ed2c9d2010819b0d8f725ea6e9f3621c.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_a498ad92c7039d91f253d20b69fb16ad248e68f7.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_b29085ff702cea863149b3d4bed4b35a3a293c8a.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_bbe8944627f7a52fe08f4ff4c367fd98b30d797a.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_c4a99ae7c063e689eca751f1f249a588189cf3fb.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_e8e7368a867000cb30356d0f5557a62f734a5a44.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_f5d000dc5f0ae44e511776d58491fc055c698b34.png" }
+        action:
+          type: selectOrigin
+          originName: chevron-edge-commerce-pilot
+          skipCache: true
+          headers:
+            X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
       - name: 3m-www
         domain: www.3m.com
