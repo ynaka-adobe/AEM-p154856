@@ -270,6 +270,25 @@ data:
           skipCache: true
           headers:
             X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
+      - name: route-chevron-techron-catalog
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
+            - anyOf:
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_13e88e227769fcc273b2536e3d2061fcdcb896fb.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_28a00a5e68bd71abaf1eb31c15dbf582f63689c3.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_2ea6d93a60812059578d0efed0954bd2300d3af9.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/media_5b2dadcdcc97e30c437b41dc4bf8e50b47a5cde6.png" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/techron-complete-fuel-system-cleaner" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/techron-diesel" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/techron-fuel-injector-cleaner" }
+                - { reqProperty: originalPath, equals: "/en-us/home/products/techron-high-mileage-fuel-system-cleaner" }
+        action:
+          type: selectOrigin
+          originName: chevron-edge-commerce-pilot
+          skipCache: true
+          headers:
+            X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
       - name: 3m-www
         domain: www.3m.com
