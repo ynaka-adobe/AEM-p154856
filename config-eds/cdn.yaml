@@ -9,6 +9,18 @@ data:
   # block once the secret exists as an actual pipeline variable.
   originSelectors:
     rules:
+      # Public doctor search: preserve the path and query string without
+      # forwarding demo-site cookies or credentials to SureSmile.
+      - name: route-suresmile-doctors
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/api/location/doctors" }
+            - { reqProperty: method, equals: "GET" }
+        action:
+          type: selectOrigin
+          originName: suresmile-api
+          skipCache: true
       # /mmm/login (and /<lang>/mmm/login) is a demo alias for 3M's B2B
       # ordering-portal login, which lives on a different subdomain/path
       # than www.3m.com. Must be matched (and listed) before the generic
@@ -652,6 +664,11 @@ data:
           headers:
             X-Forwarded-Host: chevronlubricants.ynaka-adobe.com
     origins:
+      - name: suresmile-api
+        domain: www.suresmile.com
+        forwardHost: false
+        forwardCookie: false
+        forwardAuthorization: false
       - name: 3m-www
         domain: www.3m.com
         forwardHost: false
