@@ -13,6 +13,7 @@
  */
 import { ConfigStore } from 'fastly:config-store';
 import { CacheOverride } from 'fastly:cache-override';
+import { getGeolocationForIpAddress } from 'fastly:geolocation';
 import { SecretStoreManager } from './lib/config.js';
 // Generated at build time from .env (gitignored); used when the program has
 // no config/secret stores (e.g. sandbox programs).
@@ -27,6 +28,7 @@ import {
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
 import { authRouteAllowed, siteForRequest } from './sites.js';
 import { codeCacheControl } from './cache-rules.js';
+import { callerAddress, describeVisitor } from './geo.js';
 import {
   API_PREFIX, authorize, checkWrite, clientId, matchApi, userId,
 } from './api-rules.js';
@@ -116,6 +118,20 @@ function forbidden(session, missing = []) {
   });
 }
 
+/** The caller's own IP and IP-based location, for the presenter insights panel. */
+function visitorGeo(request, env) {
+  const addr = callerAddress(request.headers, env.CLIENT_ADDRESS);
+  let geo = null;
+  try {
+    geo = addr.ip ? getGeolocationForIpAddress(addr.ip) : null;
+  } catch (e) {
+    console.error(`geo lookup failed: ${e && e.message}`);
+  }
+  return new Response(JSON.stringify(describeVisitor(addr, geo)), {
+    headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' },
+  });
+}
+
 async function handleAuthRoute(request, env, url) {
   const missing = [['XSC_OKTA_ISSUER', env.OKTA_ISSUER], ['XSC_OKTA_CLIENT_ID', env.OKTA_CLIENT_ID],
     ['XSC_SESSION_SECRET', env.SESSION_SECRET], ['XSC_OKTA_CLIENT_SECRET', env.OKTA_CLIENT_SECRET]]
@@ -137,6 +153,7 @@ async function handleAuthRoute(request, env, url) {
     }
     case '/auth/code': return redeemCode(request, env);
     case '/auth/demos': return listDemos(request, env);
+    case '/auth/geo': return visitorGeo(request, env);
     default: return new Response('Not Found', { status: 404 });
   }
 }
@@ -228,10 +245,11 @@ async function handleApi(request, env, url) {
   }
 }
 
-export async function handleRequest(request) {
+export async function handleRequest(request, client) {
   const url = new URL(request.url);
   try {
     const env = await loadEnv();
+    env.CLIENT_ADDRESS = client && client.address;
     const match = siteForRequest(request, url);
     if (match) {
       const { site } = match;
@@ -253,4 +271,4 @@ export async function handleRequest(request) {
   }
 }
 
-addEventListener('fetch', (event) => event.respondWith(handleRequest(event.request)));
+addEventListener('fetch', (event) => event.respondWith(handleRequest(event.request, event.client)));
