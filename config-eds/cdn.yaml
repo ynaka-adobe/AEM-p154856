@@ -712,6 +712,9 @@ data:
     rules:
       # ?lang=auto re-runs detection even when NEXT_LOCALE is set (for demos and testing).
       # These sit before the cookie-bound rules so they win when both could match.
+      # They keep the query string (location = the request URL with the leading / swapped for the
+      # locale), so a link like /?lang=auto&interest=implant still reaches the page with
+      # interest=implant. The cookie-bound rules below are for plain visits and drop it.
       - name: suresmile-lang-auto-ja-jp
         when:
           allOf:
@@ -719,7 +722,13 @@ data:
             - { reqProperty: originalPath, equals: "/" }
             - { queryParam: lang, equals: "auto" }
             - { reqHeader: accept-language, matches: "^\\s*([jJ][aA])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
-        action: { type: redirect, status: 302, location: "/ja-jp/" }
+        action:
+          type: redirect
+          status: 302
+          location:
+            reqProperty: url
+            transform:
+              - { op: replace, match: "^/", replacement: "/ja-jp/" }
       - name: suresmile-lang-auto-de-de
         when:
           allOf:
@@ -727,7 +736,13 @@ data:
             - { reqProperty: originalPath, equals: "/" }
             - { queryParam: lang, equals: "auto" }
             - { reqHeader: accept-language, matches: "^\\s*([dD][eE])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
-        action: { type: redirect, status: 302, location: "/de-de/" }
+        action:
+          type: redirect
+          status: 302
+          location:
+            reqProperty: url
+            transform:
+              - { op: replace, match: "^/", replacement: "/de-de/" }
       - name: suresmile-lang-auto-en-gb
         when:
           allOf:
@@ -735,7 +750,13 @@ data:
             - { reqProperty: originalPath, equals: "/" }
             - { queryParam: lang, equals: "auto" }
             - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[gG][bB])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
-        action: { type: redirect, status: 302, location: "/en-gb/" }
+        action:
+          type: redirect
+          status: 302
+          location:
+            reqProperty: url
+            transform:
+              - { op: replace, match: "^/", replacement: "/en-gb/" }
       - name: suresmile-lang-auto-en-au
         when:
           allOf:
@@ -743,7 +764,13 @@ data:
             - { reqProperty: originalPath, equals: "/" }
             - { queryParam: lang, equals: "auto" }
             - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[aA][uU])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
-        action: { type: redirect, status: 302, location: "/en-au/" }
+        action:
+          type: redirect
+          status: 302
+          location:
+            reqProperty: url
+            transform:
+              - { op: replace, match: "^/", replacement: "/en-au/" }
       - name: suresmile-lang-auto-en-us
         when:
           allOf:
@@ -751,7 +778,13 @@ data:
             - { reqProperty: originalPath, equals: "/" }
             - { queryParam: lang, equals: "auto" }
             - { reqHeader: accept-language, matches: "^\\s*([eE][nN])([-_]([uU][sS]))?\\s*([,;]|$)" }
-        action: { type: redirect, status: 302, location: "/en-us/" }
+        action:
+          type: redirect
+          status: 302
+          location:
+            reqProperty: url
+            transform:
+              - { op: replace, match: "^/", replacement: "/en-us/" }
       - name: suresmile-lang-ja-jp
         when:
           allOf:
