@@ -1,0 +1,9 @@
+authors = []
+description = "SureSmile requesting visitor CDN profile"
+language = "javascript"
+manifest_version = 3
+name = "suresmile-visitor-profile"
+service_id = ""
+
+[scripts]
+  build = "npm run build"

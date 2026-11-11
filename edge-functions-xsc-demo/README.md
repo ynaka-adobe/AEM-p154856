@@ -22,19 +22,6 @@ How it works:
 
 ## Additional sites
 
-### SureSmile visitor profile
-
-The exact `/api/visitor-profile` path on `suresmile.ynaka-adobe.com` also reuses
-this runtime, without CUG/Okta or origin proxying. `src/visitor-profile.js`
-returns only the requesting visitor's CDN-derived network context, before
-loading any auth configuration. Unlike the historical `/auth/geo` handler,
-it does **not** trust browser forwarding headers: `/config-eds` overwrites
-dedicated headers from platform `clientIp` and `clientCountry`.
-All responses are private/no-store and the scoped CDN route skips cache.
-See [the CDN configuration guide](../config-eds/README.md#suresmile-visitor-profile-pending-deployment)
-for the nullable schema, consent requirements, metadata trust boundary, and
-the required (not yet authorized) runtime plus CDN deployment.
-
 The function serves any `*.ynaka-adobe.com` host that `cdn.yaml` routes to it,
 for example **fmc-dealer-communications.ynaka-adobe.com** (EDS site
 `ynaka-adobe/fmcdealer-communications`) and **dealer-communications.ynaka-adobe.com** (EDS site

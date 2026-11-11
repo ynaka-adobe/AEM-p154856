@@ -19,7 +19,7 @@ class VisitorProfileCdnTest < Minitest::Test
   def test_exact_route_and_cache_policy_for_all_methods
     route = DATA.fetch('originSelectors').fetch('rules').find { |r| r['name'] == 'route-suresmile-visitor-profile' }
     assert_equal(
-      { 'type' => 'selectAemOrigin', 'originName' => 'edgefunction-xsc-demo-cug', 'skipCache' => true },
+      { 'type' => 'selectAemOrigin', 'originName' => 'edgefunction-suresmile-visitor-profile', 'skipCache' => true },
       route.fetch('action')
     )
     assert matches?(route.fetch('when'), HOST, PATH)
@@ -79,5 +79,23 @@ class VisitorProfileCdnTest < Minitest::Test
     end
     data.delete('responseTransformations')
     assert_equal YAML.safe_load(yaml), current
+  end
+
+  def test_independent_function_declaration_preserves_existing_functions_and_secrets
+    yaml, status = Open3.capture2('git', 'show', '252287f:config-eds/edgeFunctions.yaml', chdir: ROOT)
+    assert status.success?
+    current = YAML.safe_load(File.read(File.join(ROOT, 'config-eds/edgeFunctions.yaml')))
+    functions = current.fetch('data').fetch('functions')
+    assert_equal 1, functions.count { |function| function == { 'name' => 'suresmile-visitor-profile' } }
+    assert_operator functions.length, :<=, 3
+    functions.reject! { |function| function['name'] == 'suresmile-visitor-profile' }
+    assert_equal YAML.safe_load(yaml), current
+  end
+
+  def test_xsc_source_is_restored_without_profile_branch
+    original, status = Open3.capture2('git', 'show', 'b23c4e9:edge-functions-xsc-demo/src/index.js', chdir: ROOT)
+    assert status.success?
+    assert_equal original, File.read(File.join(ROOT, 'edge-functions-xsc-demo/src/index.js'))
+    refute File.exist?(File.join(ROOT, 'edge-functions-xsc-demo/src/visitor-profile.js'))
   end
 end

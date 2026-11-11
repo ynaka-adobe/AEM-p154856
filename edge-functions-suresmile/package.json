@@ -1,0 +1,17 @@
+{
+  "type": "module",
+  "private": true,
+  "name": "suresmile-visitor-profile-edge-function",
+  "description": "Independent, uncached CDN visitor profile for the SureSmile demo",
+  "dependencies": {
+    "@fastly/js-compute": "^3.46.0"
+  },
+  "scripts": {
+    "build": "js-compute-runtime ./src/index.js ./bin/main.wasm",
+    "test": "node --test 'test/**/*.test.mjs'"
+  },
+  "overrides": {
+    "esbuild": ">=0.28.1",
+    "@bytecodealliance/weval": "^0.5.0"
+  }
+}

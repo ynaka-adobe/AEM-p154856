@@ -2,6 +2,9 @@ kind: "EdgeFunctions"
 version: "1"
 data:
   functions:
+    # Independent, secret-free visitor profile for SureSmile only
+    # (see edge-functions-suresmile/README.md).
+    - name: suresmile-visitor-profile
     # DuPont persona decisioning (see edge-functions-dupont/README.md).
     - name: dupont-persona
     # Closed User Groups + Okta login for xsc-demo.ynaka-adobe.com only

@@ -1,7 +1,8 @@
 # Edge Delivery CDN configuration
 
 Deploy this directory with the existing Cloud Manager **Edge Delivery
-configuration pipeline**. `/config` is for the separate AEM environment
+configuration pipeline**, automatically triggered by commits to `main` in
+this program. `/config` is for the separate AEM environment
 configuration pipeline; it is not the EDS configuration source.
 
 ## SureSmile doctor API proxy
@@ -55,8 +56,9 @@ to demonstrate the integration.
 1. Make this commit available on the branch tracked by the existing Cloud
    Manager Edge Delivery configuration pipeline for this CDN, with source
    directory `/config-eds`. Run that pipeline in the intended environment.
-   A local edit, a Git push alone, or deploying an edge function does not
-   activate the CDN rule. Do not repoint the shared pipeline or change
+   A local edit or deploying an edge function alone does not activate a
+   CDN rule; the main-triggered config pipeline must succeed.
+   Do not repoint the shared pipeline or change
    unrelated domains to deploy this demo.
 2. Keep the existing function declarations and required Cloud Manager
    variables intact. `edgeFunctions.yaml` currently references
@@ -89,10 +91,11 @@ pre-deployment baseline, not evidence that the new rule is live.
 ## SureSmile visitor profile (pending deployment)
 
 The exact `/api/visitor-profile` path on `suresmile.ynaka-adobe.com` selects
-the existing `xsc-demo-cug` runtime, bypassing CDN cache for every method.
+the independent `suresmile-visitor-profile` runtime in
+`edge-functions-suresmile`, bypassing CDN cache for every method.
 Only GET without query parameters is supported; writes return 405, lookup
 parameters return 400. Other paths and sites retain their routing. The handler
-runs before CUG/Okta configuration and does not read sessions or auth secrets.
+has no CUG/Okta dependencies and does not read sessions or auth secrets.
 The doctor API remains a separate origin route.
 
 The CDN removes browser-supplied `x-suresmile-profile-*` metadata headers
@@ -105,7 +108,7 @@ sanitization. Before activation, verify that spoofed copies are overwritten
 on the target CDN, including across its shielding hops.
 
 Adobe's documented CDN properties provide IP and country, not city/coordinates.
-The existing runtime's native
+The dedicated runtime's native
 [Fastly geolocation API](https://www.fastly.com/documentation/reference/compute/sdks/javascript/js-compute/geolocation/fn.getGeolocationForIpAddress/)
 looks up only the CDN-provided caller IP. No third-party service or arbitrary
 IP lookup is used. City and coordinates may be unavailable, especially with
@@ -142,12 +145,15 @@ consent while `?insights=1` is open, clear/abort on withdrawal, and never send
 these fields to Adobe Analytics, dataLayer, storage, or logs. Prior analytics
 consent alone is insufficient.
 
-Deployment is **not authorized or performed for this feature**. After approval,
-deploy the updated `xsc-demo-cug` package using the existing authenticated edge
-function process, then run the `/config-eds` pipeline. There is no new function
-declaration or secret. The shared runtime build must preserve its existing
-environment-specific configuration; a local secret-free build is only a
-compilation check, not a deployable replacement for that configuration.
+The user approved the independent function migration and deployment.
+Main commits automatically trigger `/config-eds`; successful configuration
+deployment registers `suresmile-visitor-profile` as the third named function.
+Its independent WASM must then be uploaded to the correctly selected SureSmile
+site using [the dedicated build/deploy commands](../edge-functions-suresmile/README.md#deploy).
+No new secret is required. Do not overwrite or deploy XSC's shared package for
+this feature. Older deployed XSC packages can retain the dormant profile branch
+until separately rebuilt; XSC source is restored and the new route does not
+select that function.
 Confirm scope, private/no-store response headers, two distinct visitors'
 isolation, and spoof resistance on the actual CDN without recording their
 IP/location. Do not claim this endpoint or its geo fields are live beforehand.
@@ -155,6 +161,6 @@ IP/location. Do not claim this endpoint or its geo fields are live beforehand.
 Focused checks:
 
 ```sh
-node --test edge-functions-xsc-demo/test/visitor-profile.test.mjs
+node --test edge-functions-suresmile/test/visitor-profile.test.mjs
 ruby test/cdn/visitor-profile.test.rb
 ```

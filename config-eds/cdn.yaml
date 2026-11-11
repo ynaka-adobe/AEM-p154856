@@ -16,7 +16,7 @@ data:
             - { reqProperty: originalPath, equals: "/api/visitor-profile" }
         action:
           type: selectAemOrigin
-          originName: edgefunction-xsc-demo-cug
+          originName: edgefunction-suresmile-visitor-profile
           skipCache: true
       # Public doctor search: preserve the path and query string without
       # forwarding demo-site cookies or credentials to SureSmile.
