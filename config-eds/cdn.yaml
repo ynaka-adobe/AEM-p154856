@@ -698,6 +698,64 @@ data:
         forwardHost: false
         forwardCookie: true
         forwardAuthorization: true
+  # First-visit language routing for SureSmile (suresmile.ynaka-adobe.com only).
+  # Mirrors www.suresmile.com: the root path picks a locale from the first language in
+  # Accept-Language while no NEXT_LOCALE cookie exists; a returning visitor goes back to the
+  # locale the site remembered. Anything unmatched (en, en-US, no header) falls through to
+  # the EDS redirects.json default (/ -> /en-us/). Destinations are locale roots only, so
+  # redirects.json stays the single place that decides which locales live on EDS vs the
+  # legacy site. 302 on purpose: language routing must never be cached as permanent.
+  # Deliberately a short list for now (ja, de incl. de-AT, en-GB, en-AU); add the rest of
+  # the www.suresmile.com locales the same way once these are proven.
+  # Every rule is scoped to this domain; this file is shared by all sites on the CDN.
+  redirects:
+    rules:
+      - name: suresmile-lang-ja-jp
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, exists: false }
+            - { reqHeader: accept-language, matches: "^\\s*([jJ][aA])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/ja-jp/" }
+      - name: suresmile-lang-de-de
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, exists: false }
+            - { reqHeader: accept-language, matches: "^\\s*([dD][eE])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/de-de/" }
+      - name: suresmile-lang-en-gb
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, exists: false }
+            - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[gG][bB])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/en-gb/" }
+      - name: suresmile-lang-en-au
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, exists: false }
+            - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[aA][uU])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/en-au/" }
+      - name: suresmile-remembered-en-us
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, equals: "en-us" }
+        action: { type: redirect, status: 302, location: "/en-us/" }
+      - name: suresmile-remembered-ja-jp
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { reqCookie: NEXT_LOCALE, equals: "ja-jp" }
+        action: { type: redirect, status: 302, location: "/ja-jp/" }
   requestTransformations:
     rules:
       # Remove caller-supplied copies before setting platform metadata.
