@@ -120,6 +120,7 @@ Agreed frontend response schema:
 {
   "ip": null,
   "city": null,
+  "region": null,
   "country": null,
   "latitude": null,
   "longitude": null,
@@ -130,7 +131,11 @@ Agreed frontend response schema:
 
 `country` is the observed CDN two-letter country code, or the runtime's observed
 country name if the CDN code is missing. Text is sanitized; unavailable or
-invalid values are null. Coordinates are numeric, finite, within latitude
+invalid values are null. `region` is the observed Fastly country subdivision
+code (short or full ISO 3166-2), not an inferred state name. It is null if
+unavailable/invalid and may be absent on older runtime packages until updated.
+No postal code, ASN/network, or connection fields are collected.
+Coordinates are numeric, finite, within latitude
 [-90, 90] / longitude [-180, 180], and emitted only as a complete pair.
 When present, `accuracy` is `"approximate IP geolocation"`; no radius is invented.
 A failed runtime lookup returns explicit 503 rather than a default location.

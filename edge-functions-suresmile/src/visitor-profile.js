@@ -31,6 +31,11 @@ function countryCode(value) {
   return typeof value === 'string' && /^[A-Z]{2}$/.test(value) ? value : null;
 }
 
+function regionCode(value) {
+  const code = text(value);
+  return code && /^(?:[A-Za-z]{2}-)?[A-Za-z0-9]{1,3}$/.test(code) ? code : null;
+}
+
 export function visitorProfile(ip, country, geo) {
   const latitude = geo?.latitude;
   const longitude = geo?.longitude;
@@ -40,6 +45,7 @@ export function visitorProfile(ip, country, geo) {
   return {
     ip,
     city: text(geo?.city),
+    region: regionCode(geo?.region),
     country: countryCode(country) || text(geo?.country_name),
     latitude: coordinates ? latitude : null,
     longitude: coordinates ? longitude : null,

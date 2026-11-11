@@ -22,6 +22,7 @@ The UI path and JSON contract are unchanged:
 {
   "ip": null,
   "city": null,
+  "region": null,
   "country": null,
   "latitude": null,
   "longitude": null,
@@ -44,6 +45,15 @@ private/no-store; CDN routing skips cache. No profile storage, cookies,
 cross-origin grants, third-party lookup, or sensitive logs are added.
 The UI must require explicit profile-purpose consent and `?insights=1`,
 clear on withdrawal, and never send these fields to analytics or storage.
+
+`region` is an additive nullable **state/region code**, taken only from
+Fastly's `geo.region` country subdivision metadata. It preserves an observed
+short code (for example `CA`) or full ISO 3166-2 code (for example `US-CA`);
+it is not a state name and no prefix/jurisdiction is inferred from country
+or city. Invalid or unavailable codes are null. Older deployed packages may
+omit `region` until this updated standalone WASM is uploaded.
+The provider also supports nullable postal code, ASN/network, and connection
+metadata; this endpoint intentionally does not collect or expose those fields.
 
 See [the full CDN contract](../config-eds/README.md#suresmile-visitor-profile-pending-deployment).
 

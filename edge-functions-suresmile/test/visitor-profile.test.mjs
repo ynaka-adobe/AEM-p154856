@@ -12,7 +12,7 @@ const platform = {
 const req = (headers = platform, suffix = '', method = 'GET') => new Request(
   `https://${host}${path}${suffix}`, { method, headers },
 );
-const geo = { city: 'Example City', country_name: 'Example Country', latitude: 40, longitude: -70 };
+const geo = { city: 'Example City', region: 'CA', country_name: 'Example Country', latitude: 40, longitude: -70 };
 const noLookup = () => assert.fail('must not look up caller-supplied data');
 const noStore = (response) => {
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
@@ -24,6 +24,7 @@ test('only CDN metadata is used, not spoofed forwarding headers or runtime node'
   const response = handleVisitorProfile(req({
     ...platform, 'fastly-client-ip': '198.51.100.9',
     'x-forwarded-for': '198.51.100.9', 'x-forwarded-host': 'evil.example',
+    'x-suresmile-profile-region': 'ZZ',
   }), (ip) => {
     assert.equal(ip, platform['x-suresmile-profile-ip']);
     return geo;
@@ -31,7 +32,7 @@ test('only CDN metadata is used, not spoofed forwarding headers or runtime node'
   assert.equal(response.status, 200);
   noStore(response);
   assert.deepEqual(await response.json(), {
-    ip: '203.0.113.7', city: 'Example City', country: 'US',
+    ip: '203.0.113.7', city: 'Example City', region: 'CA', country: 'US',
     latitude: 40, longitude: -70, source: 'cdn', accuracy: 'approximate IP geolocation',
   });
 });
@@ -43,7 +44,7 @@ test('unavailable metadata is null, never CDN-node or default location', async (
   }), noLookup);
   noStore(response);
   assert.deepEqual(await response.json(), {
-    ip: null, city: null, country: null, latitude: null, longitude: null,
+    ip: null, city: null, region: null, country: null, latitude: null, longitude: null,
     source: 'cdn', accuracy: 'unavailable',
   });
   const missing = handleVisitorProfile(req({}), noLookup);
@@ -83,6 +84,17 @@ test('country and text sanitization; coordinate pair is finite numeric and in ra
   assert.equal(visitorProfile(null, null, { latitude: 0, longitude: 0 }).latitude, 0);
 });
 
+test('region is only an observed subdivision code, never inferred from city or country', () => {
+  for (const region of ['CA', 'US-CA', 'JP-13', 'GB-ENG', '01', 'IDF']) {
+    assert.equal(visitorProfile(null, 'US', { region }).region, region);
+  }
+  assert.equal(visitorProfile(null, null, { region: ' CA ' }).region, 'CA');
+  for (const region of [null, undefined, '?', '', 'California', '<script>', 'CA\nInjected', 'US-CA-extra', 12]) {
+    assert.equal(visitorProfile(null, 'US', { region, city: 'Example City' }).region, null);
+  }
+  assert.equal(visitorProfile(null, 'US', { city: 'San Francisco' }).region, null);
+});
+
 test('no query lookups or writes; all error responses are no-store', () => {
   for (const suffix of ['?ip=198.51.100.9', '?address=94121', '?latitude=40', '?foo=bar']) {
     const response = handleVisitorProfile(req(platform, suffix), noLookup);
@@ -112,6 +124,7 @@ test('successive visitors cannot share state; lookup failure is explicit without
   const second = await secondResponse.json();
   assert.notEqual(second.ip, first.ip);
   assert.equal(second.city, null);
+  assert.equal(second.region, null);
   assert.equal(second.latitude, null);
   const original = console.error;
   const messages = [];
