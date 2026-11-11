@@ -710,6 +710,48 @@ data:
   # Every rule is scoped to this domain; this file is shared by all sites on the CDN.
   redirects:
     rules:
+      # ?lang=auto re-runs detection even when NEXT_LOCALE is set (for demos and testing).
+      # These sit before the cookie-bound rules so they win when both could match.
+      - name: suresmile-lang-auto-ja-jp
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { queryParam: lang, equals: "auto" }
+            - { reqHeader: accept-language, matches: "^\\s*([jJ][aA])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/ja-jp/" }
+      - name: suresmile-lang-auto-de-de
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { queryParam: lang, equals: "auto" }
+            - { reqHeader: accept-language, matches: "^\\s*([dD][eE])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/de-de/" }
+      - name: suresmile-lang-auto-en-gb
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { queryParam: lang, equals: "auto" }
+            - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[gG][bB])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/en-gb/" }
+      - name: suresmile-lang-auto-en-au
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { queryParam: lang, equals: "auto" }
+            - { reqHeader: accept-language, matches: "^\\s*([eE][nN]-[aA][uU])([-_][A-Za-z0-9]+)*\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/en-au/" }
+      - name: suresmile-lang-auto-en-us
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+            - { queryParam: lang, equals: "auto" }
+            - { reqHeader: accept-language, matches: "^\\s*([eE][nN])([-_]([uU][sS]))?\\s*([,;]|$)" }
+        action: { type: redirect, status: 302, location: "/en-us/" }
       - name: suresmile-lang-ja-jp
         when:
           allOf:
@@ -844,6 +886,15 @@ data:
             replacement: ""
   responseTransformations:
     rules:
+      - name: no-store-suresmile-root
+        # The / -> /en-us/ redirect from redirects.json is a 301 cached for 2 hours by
+        # browsers, which hides the language rules above on repeat visits.
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/" }
+        actions:
+          - { type: set, respHeader: Cache-Control, value: "no-store" }
       - name: no-store-suresmile-visitor-profile
         when:
           allOf:
