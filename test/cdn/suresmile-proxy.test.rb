@@ -47,6 +47,7 @@ class SureSmileProxyTest < Minitest::Test
       url = "https://suresmile.ynaka-adobe.com/api/location/doctors?#{query}"
       assert matches?(RULE.fetch('when'), request(url)), url
       CONFIG.fetch('data').fetch('requestTransformations').fetch('rules').each do |rule|
+        next if rule.fetch('actions').all? { |action| action.key?('reqHeader') }
         refute matches?(rule.fetch('when'), request(url)), rule.fetch('name')
       end
     end

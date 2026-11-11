@@ -29,6 +29,7 @@ import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js'
 import { authRouteAllowed, siteForRequest } from './sites.js';
 import { codeCacheControl } from './cache-rules.js';
 import { callerAddress, describeVisitor } from './geo.js';
+import { handleVisitorProfile } from './visitor-profile.js';
 import {
   API_PREFIX, authorize, checkWrite, clientId, matchApi, userId,
 } from './api-rules.js';
@@ -248,6 +249,8 @@ async function handleApi(request, env, url) {
 export async function handleRequest(request, client) {
   const url = new URL(request.url);
   try {
+    const profile = handleVisitorProfile(request, getGeolocationForIpAddress);
+    if (profile) return profile;
     const env = await loadEnv();
     env.CLIENT_ADDRESS = client && client.address;
     const match = siteForRequest(request, url);

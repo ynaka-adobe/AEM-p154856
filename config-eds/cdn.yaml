@@ -9,6 +9,15 @@ data:
   # block once the secret exists as an actual pipeline variable.
   originSelectors:
     rules:
+      - name: route-suresmile-visitor-profile
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        action:
+          type: selectAemOrigin
+          originName: edgefunction-xsc-demo-cug
+          skipCache: true
       # Public doctor search: preserve the path and query string without
       # forwarding demo-site cookies or credentials to SureSmile.
       - name: route-suresmile-doctors
@@ -691,6 +700,28 @@ data:
         forwardAuthorization: true
   requestTransformations:
     rules:
+      # Remove caller-supplied copies before setting platform metadata.
+      - name: strip-suresmile-profile-metadata
+        when: "*"
+        actions:
+          - { type: unset, reqHeader: x-suresmile-profile-host }
+          - { type: unset, reqHeader: x-suresmile-profile-ip }
+          - { type: unset, reqHeader: x-suresmile-profile-country }
+      - name: set-suresmile-profile-metadata
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        actions:
+          - type: set
+            reqHeader: x-suresmile-profile-host
+            value: { reqProperty: domain }
+          - type: set
+            reqHeader: x-suresmile-profile-ip
+            value: { reqProperty: clientIp }
+          - type: set
+            reqHeader: x-suresmile-profile-country
+            value: { reqProperty: clientCountry }
       - name: serve-chevron-html-pages
         when:
           allOf:
@@ -753,3 +784,13 @@ data:
             op: replace
             match: '\.html$'
             replacement: ""
+  responseTransformations:
+    rules:
+      - name: no-store-suresmile-visitor-profile
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
+            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        actions:
+          - { type: set, respHeader: Cache-Control, value: "private, no-store" }
+          - { type: set, respHeader: Surrogate-Control, value: "no-store" }
