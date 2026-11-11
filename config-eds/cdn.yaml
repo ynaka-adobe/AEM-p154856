@@ -714,7 +714,8 @@ data:
       # These sit before the cookie-bound rules so they win when both could match.
       # They keep the query string (location = the request URL with the leading / swapped for the
       # locale), so a link like /?lang=auto&interest=implant still reaches the page with
-      # interest=implant. The cookie-bound rules below are for plain visits and drop it.
+      # interest=implant, but lang=auto itself is dropped: it only drives this redirect and
+      # should not stay in the address bar. The cookie-bound rules below drop the whole query.
       - name: suresmile-lang-auto-ja-jp
         when:
           allOf:
@@ -728,6 +729,9 @@ data:
           location:
             reqProperty: url
             transform:
+              - { op: replace, match: "[?]lang=auto&", replacement: "?" }
+              - { op: replace, match: "&lang=auto", replacement: "" }
+              - { op: replace, match: "[?]lang=auto$", replacement: "" }
               - { op: replace, match: "^/", replacement: "/ja-jp/" }
       - name: suresmile-lang-auto-de-de
         when:
@@ -742,6 +746,9 @@ data:
           location:
             reqProperty: url
             transform:
+              - { op: replace, match: "[?]lang=auto&", replacement: "?" }
+              - { op: replace, match: "&lang=auto", replacement: "" }
+              - { op: replace, match: "[?]lang=auto$", replacement: "" }
               - { op: replace, match: "^/", replacement: "/de-de/" }
       - name: suresmile-lang-auto-en-gb
         when:
@@ -756,6 +763,9 @@ data:
           location:
             reqProperty: url
             transform:
+              - { op: replace, match: "[?]lang=auto&", replacement: "?" }
+              - { op: replace, match: "&lang=auto", replacement: "" }
+              - { op: replace, match: "[?]lang=auto$", replacement: "" }
               - { op: replace, match: "^/", replacement: "/en-gb/" }
       - name: suresmile-lang-auto-en-au
         when:
@@ -770,6 +780,9 @@ data:
           location:
             reqProperty: url
             transform:
+              - { op: replace, match: "[?]lang=auto&", replacement: "?" }
+              - { op: replace, match: "&lang=auto", replacement: "" }
+              - { op: replace, match: "[?]lang=auto$", replacement: "" }
               - { op: replace, match: "^/", replacement: "/en-au/" }
       - name: suresmile-lang-auto-en-us
         when:
@@ -784,6 +797,9 @@ data:
           location:
             reqProperty: url
             transform:
+              - { op: replace, match: "[?]lang=auto&", replacement: "?" }
+              - { op: replace, match: "&lang=auto", replacement: "" }
+              - { op: replace, match: "[?]lang=auto$", replacement: "" }
               - { op: replace, match: "^/", replacement: "/en-us/" }
       - name: suresmile-lang-ja-jp
         when:
