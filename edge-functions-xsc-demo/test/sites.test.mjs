@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { siteForHost, DEFAULT_SITE_ONLY_ROUTES, authRouteAllowed } from '../src/sites.js';
+import {
+  siteForHost, DEFAULT_SITE_ONLY_ROUTES, authRouteAllowed, useDefaultSiteOkta,
+} from '../src/sites.js';
 
 test('fmcdealer host resolves to its own origin and public URL', () => {
   const site = siteForHost('fmc-dealer-communications.ynaka-adobe.com');
@@ -76,4 +78,17 @@ test('dealer-communications host resolves to its own origin and opts in to guest
   assert.equal(site.api.secretKey, 'XSC_DEALER_COMMUNICATIONS_API_SECRET');
   assert.deepEqual(site.api.access, { read: 'anonymous', write: 'anonymous' });
   assert.equal(site.siteTokenKey, 'XSC_DEALER_COMMUNICATIONS_SITE_TOKEN');
+});
+
+test('xsc-demo switches to its own Okta app only when both demo keys are set', () => {
+  const shared = { OKTA_ISSUER: 'https://trial.okta.com', OKTA_CLIENT_ID: 'shared', OKTA_CLIENT_SECRET: 's1' };
+  assert.deepEqual(useDefaultSiteOkta({ ...shared, DEMO_OKTA_ISSUER: 'https://adobe.okta.com' }), {
+    ...shared, DEMO_OKTA_ISSUER: 'https://adobe.okta.com',
+  });
+  const env = useDefaultSiteOkta({
+    ...shared, DEMO_OKTA_ISSUER: 'https://adobe.okta.com', DEMO_OKTA_CLIENT_ID: 'adobe', DEMO_OKTA_CLIENT_SECRET: 's2',
+  });
+  assert.equal(env.OKTA_ISSUER, 'https://adobe.okta.com');
+  assert.equal(env.OKTA_CLIENT_ID, 'adobe');
+  assert.equal(env.OKTA_CLIENT_SECRET, 's2');
 });

@@ -7,6 +7,8 @@
  * - Any other *.ynaka-adobe.com host that cdn.yaml routes to the function uses
  *   the convention main--<subdomain>--ynaka-adobe.aem.live.
  * - xsc-demo and every other host use the defaults from loadEnv().
+ * - xsc-demo alone can sign in through a different Okta app (XSC_DEMO_OKTA_*),
+ *   e.g. Adobe's corporate Okta, while the other hosts keep the shared one.
  *
  * The public origin is always derived from the matched host, never hard-coded.
  */
@@ -96,4 +98,16 @@ export function siteForRequest(request, url) {
   candidates.push(url.hostname);
   const host = candidates.find((h) => h && siteForHost(h));
   return host ? { host, site: siteForHost(host) } : null;
+}
+
+/**
+ * Switches the default (xsc-demo) site to its own Okta app when XSC_DEMO_OKTA_ISSUER
+ * and XSC_DEMO_OKTA_CLIENT_ID are set. Otherwise it keeps the shared app.
+ */
+export function useDefaultSiteOkta(env) {
+  if (!env.DEMO_OKTA_ISSUER || !env.DEMO_OKTA_CLIENT_ID) return env;
+  env.OKTA_ISSUER = env.DEMO_OKTA_ISSUER;
+  env.OKTA_CLIENT_ID = env.DEMO_OKTA_CLIENT_ID;
+  env.OKTA_CLIENT_SECRET = env.DEMO_OKTA_CLIENT_SECRET;
+  return env;
 }

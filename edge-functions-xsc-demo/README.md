@@ -115,6 +115,8 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 | `XSC_ORIGIN_HOSTNAME` | config | optional, default `main--xsc-demo--ynaka-adobe.aem.live` |
 | `XSC_PUBLIC_ORIGIN` | config | optional, default `https://xsc-demo.ynaka-adobe.com` |
 | `XSC_OKTA_CLIENT_SECRET` | secret | Cloud Manager secret `XSC_OKTA_CLIENT_SECRET` |
+| `XSC_DEMO_OKTA_ISSUER`, `XSC_DEMO_OKTA_CLIENT_ID` | config | optional; xsc-demo only signs in through this Okta app (e.g. `https://adobe.okta.com`) while other hosts keep the shared one. Both must be set |
+| `XSC_DEMO_OKTA_CLIENT_SECRET` | secret | client secret for the xsc-demo Okta app above |
 | `XSC_SESSION_SECRET` | secret | Cloud Manager secret `XSC_SESSION_SECRET`, at least 32 random characters (`openssl rand -base64 48`) |
 
 > **Important:** create both Cloud Manager **secret** environment variables

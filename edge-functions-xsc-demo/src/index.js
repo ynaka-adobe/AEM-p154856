@@ -26,7 +26,7 @@ import {
   guestAllows, isEmployee, listDemos, redeemCode,
 } from './guest.js';
 import { describeAttribute, evaluatePolicy, subjectAttributes } from './abac.js';
-import { authRouteAllowed, siteForRequest } from './sites.js';
+import { authRouteAllowed, siteForRequest, useDefaultSiteOkta } from './sites.js';
 import { codeCacheControl } from './cache-rules.js';
 import { callerAddress, describeVisitor } from './geo.js';
 import {
@@ -63,6 +63,8 @@ async function loadEnv() {
     PUBLIC_ORIGIN: get('XSC_PUBLIC_ORIGIN') || DEFAULT_PUBLIC_ORIGIN,
     OKTA_ISSUER: get('XSC_OKTA_ISSUER') || DEFAULT_OKTA_ISSUER,
     OKTA_CLIENT_ID: get('XSC_OKTA_CLIENT_ID') || DEFAULT_OKTA_CLIENT_ID,
+    DEMO_OKTA_ISSUER: get('XSC_DEMO_OKTA_ISSUER'),
+    DEMO_OKTA_CLIENT_ID: get('XSC_DEMO_OKTA_CLIENT_ID'),
     OKTA_SCOPES: get('XSC_OKTA_SCOPES'),
     OKTA_GROUPS_CLAIM: get('XSC_OKTA_GROUPS_CLAIM'),
     OKTA_COUNTRY_CLAIM: get('XSC_OKTA_COUNTRY_CLAIM'),
@@ -70,6 +72,7 @@ async function loadEnv() {
     SESSION_TTL: get('XSC_SESSION_TTL'),
     OKTA_CLIENT_SECRET: await optionalSecret('XSC_OKTA_CLIENT_SECRET'),
     SESSION_SECRET: await optionalSecret('XSC_SESSION_SECRET'),
+    DEMO_OKTA_CLIENT_SECRET: await optionalSecret('XSC_DEMO_OKTA_CLIENT_SECRET'),
     DM_DELIVERY: get('XSC_DM_DELIVERY'),
     DM_CLIENT_ID: get('XSC_DM_CLIENT_ID'),
     DM_SCOPE: get('XSC_DM_SCOPE'),
@@ -261,6 +264,8 @@ export async function handleRequest(request, client) {
       env.API_SECRET = site.api ? await optionalSecret(site.api.secretKey) : undefined;
       // never send another site's origin credentials: use this site's own token, if any
       env.SITE_TOKEN = site.siteTokenKey ? await optionalSecret(site.siteTokenKey) : undefined;
+    } else {
+      useDefaultSiteOkta(env);
     }
     if (url.pathname.startsWith('/auth/')) return await handleAuthRoute(request, env, url);
     if (url.pathname.startsWith(`${API_PREFIX}/`)) return await handleApi(request, env, url);
