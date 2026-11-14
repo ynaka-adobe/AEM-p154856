@@ -109,5 +109,6 @@ export function useDefaultSiteOkta(env) {
   env.OKTA_ISSUER = env.DEMO_OKTA_ISSUER;
   env.OKTA_CLIENT_ID = env.DEMO_OKTA_CLIENT_ID;
   env.OKTA_CLIENT_SECRET = env.DEMO_OKTA_CLIENT_SECRET;
+  env.OKTA_LOCAL_LOGOUT = true;
   return env;
 }

@@ -238,6 +238,8 @@ export async function callback(request, env) {
 export async function logout(request, env) {
   const url = new URL(request.url);
   const cookies = [clearCookie(SESSION_COOKIE), clearCookie(IDT_COOKIE, '/auth')];
+  // Adobe's corporate Okta can't register a sign-out redirect, so only end the local session
+  if (env.OKTA_LOCAL_LOGOUT) return redirect('/', cookies);
   const idToken = getCookie(request, IDT_COOKIE);
   const { end_session_endpoint: endSession } = await discovery(env);
   if (!idToken || !endSession) return redirect('/', cookies);

@@ -91,4 +91,5 @@ test('xsc-demo switches to its own Okta app only when both demo keys are set', (
   assert.equal(env.OKTA_ISSUER, 'https://adobe.okta.com');
   assert.equal(env.OKTA_CLIENT_ID, 'adobe');
   assert.equal(env.OKTA_CLIENT_SECRET, 's2');
+  assert.equal(env.OKTA_LOCAL_LOGOUT, true);
 });
