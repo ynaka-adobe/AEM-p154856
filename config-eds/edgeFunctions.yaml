@@ -2,8 +2,6 @@ kind: "EdgeFunctions"
 version: "1"
 data:
   functions:
-    # Keep the legacy runtime until CDN routing switches to visitor-profile.
-    - name: suresmile-visitor-profile
     # Generic, secret-free shared visitor profile
     # (see edge-functions-visitor-profile/README.md).
     - name: visitor-profile

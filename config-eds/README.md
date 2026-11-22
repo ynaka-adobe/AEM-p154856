@@ -125,9 +125,10 @@ no broad CORS workaround is provided.
 
 The source directory is `edge-functions-visitor-profile`, and the deployed
 function/package name is `visitor-profile`. The inactive `dupont-persona`
-declaration and its homepage origin selector are removed to free capacity.
-Register and upload the generic replacement before changing the profile origin
-and internal metadata names; retire `suresmile-visitor-profile` only afterward.
+registration and its homepage origin selector are retired; the obsolete
+`suresmile-visitor-profile` registration is also retired. The generic replacement
+was registered and uploaded before changing the profile origin and internal
+metadata names; the legacy runtime remained available until routing succeeded.
 XSC remains untouched. The final declarations are `visitor-profile` and
 `xsc-demo-cug`; no fourth function slot is needed.
 New domains served by this shared CDN need no profile host-list update.
@@ -188,10 +189,11 @@ Endpoint availability does not grant permission to collect or display a profile.
 SureSmile's existing separately consented tab-session display remains compatible;
 other sites need no Insights or analytics integration to make the route available.
 
-### Rollout requires a separate deployment decision
+### Deployment order and local context
 
-No push, merge, edge upload, pipeline execution, DNS change, or public
-configuration change is authorized by this implementation.
+Run public configuration changes and edge uploads only with approval.
+The generic migration follows the runtime-first order below; a build or
+upload alone does not deploy CDN configuration.
 
 1. The confirmed intended Adobe IMS organization is **acsmarketing**, not
    AEM XSC Showcase. Verify its Cloud Manager program `154856` binding and
@@ -208,15 +210,15 @@ configuration change is authorized by this implementation.
    Successful authentication alone does not satisfy the runtime-before-routing
    rollout prerequisite; the deployed handler must accept any valid hostname
    supplied by this CDN rather than the older SureSmile/domain allowlist.
-2. After explicit deployment approval, register `visitor-profile` in the freed
-   DuPont slot while retaining the legacy profile origin. Build/package and
-   upload the generic WASM to that verified registration using
+2. For a new registration or runtime-name migration, register the replacement
+   within available capacity while retaining the serving profile origin.
+   Build/package and upload the generic WASM to that verified registration using
    [the dedicated commands](../edge-functions-visitor-profile/README.md#deploy).
    Upload the generic handler **before** switching the origin and metadata
-   header names, then retire the obsolete SureSmile registration.
+   header names; retire the old registration only after the new route succeeds.
 3. Publish `/config-eds` through the existing Edge Delivery configuration
    pipeline only after approval. Main commits automatically trigger it. Keep all
-   function declarations, auth secrets, and unrelated domain settings intact.
+   XSC declarations, auth secrets, and unrelated domain settings intact.
    A config update alone does not update the WASM, or vice versa.
 4. Keep the verified shared function registration; do not deploy another package
    over CUG, consume another named-function slot, or change DNS. Per user direction,

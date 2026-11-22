@@ -85,20 +85,34 @@ that public CDN metadata is authentic or that the live route is active.
 
 ## Deploy
 
-**A separate explicit deployment decision is required.** The following are
-rollout instructions, not authorization to run setup or deployment.
+Deployment changes public infrastructure; run these commands only with approval.
 Main commits automatically trigger the `/config-eds` configuration pipeline.
 Confirm the existing function registration before uploading.
-Registration/routing and WASM upload are separate steps. The generic migration
-first removes the inactive DuPont declaration/homepage route and registers
-`visitor-profile` while keeping the legacy profile origin serving. Upload the
-generic package before switching the CDN origin and metadata header names.
-Then remove the obsolete `suresmile-visitor-profile` declaration. Preserve XSC;
-do not consume a fourth function slot.
+Registration/routing and WASM upload are separate steps. The generic function is
+registered as `visitor-profile`; inactive `dupont-persona` and the legacy
+`suresmile-visitor-profile` registrations are retired. For another runtime-name
+migration, register and upload the replacement before switching the CDN origin
+and metadata, and retire the old registration only after routing succeeds.
+Preserve XSC; do not deploy this package over `xsc-demo-cug`.
 Confirm the IMS org owning program `154856`; an App Builder workspace selection
 does not verify Edge Functions authentication or deployment context.
 
-In this runtime's directory, select and verify the intended target:
+Start in `edge-functions-visitor-profile`, not the archived DuPont or XSC
+directories. A fresh checkout does not contain the worktree's ignored `.aio`.
+Establish an approved, dedicated **local** OAuth context for **acsmarketing**:
+`Adobe Customer Solutions Services Marketing`,
+`21BD487E5F2280130A495ECC@AdobeOrg`. Do not copy credentials between checkouts,
+reuse another organization's token, or switch global App Builder configuration.
+Once that local context is configured, select and authenticate it without
+printing its access token:
+
+```sh
+aio auth ctx --local --set aem-edge-acsmarketing
+aio auth login --local --ctx aem-edge-acsmarketing --bare > /dev/null
+```
+
+Complete browser sign-in using the acsmarketing profile when requested.
+Then select and verify the intended local target:
 
 ```sh
 aio aem edge-functions setup
@@ -106,16 +120,20 @@ aio aem edge-functions setup
 # site 1620193: suresmile.ynaka-adobe.com.
 # Store setup locally; do not change another runtime's global configuration.
 aio aem edge-functions info --batch
+aio aem edge-functions list
 ```
 
 Verify Program ID `154856`, Edge Delivery `Yes`, and Site Domain
-`suresmile.ynaka-adobe.com`. In the installed CLI, an old Environment ID is not
+`suresmile.ynaka-adobe.com`. This is the verified administrative gateway to the
+shared registry, not the function name or a hostname restriction. Grand Design
+RV, `granddesignrv.xsc.demo.adobe.com` (site `1620652`), has the same registry
+and is another verified selection. In the installed CLI, an old Environment ID is not
 the EDS selector; do not replace it with the site ID. An explicit
 `AEM_EDGE_FUNCTIONS_API_ENDPOINT` can override the target, so remove an unintended
 override privately. Fix any ADC `invalid_client` secret mismatch privately;
 never paste secrets into chat or commit `.aio`/credentials.
 
-After the new function is registered and the target is verified:
+After `visitor-profile` is listed and the target is verified:
 
 ```sh
 aio aem edge-functions build
@@ -123,8 +141,10 @@ aio aem edge-functions deploy visitor-profile --package pkg/visitor-profile.tar.
 aio aem edge-functions packages visitor-profile --limit 1
 ```
 
-Do not deploy `xsc-demo-cug` for this feature. The deploy command discovers the
-new runtime's packaged artifact under `pkg/`.
+The explicit `--package` selects the generic archive even if old archives
+remain under `pkg/`. Building alone uploads nothing. Uploading WASM updates the
+registered runtime but does not deploy CDN YAML; main's configuration pipeline
+must finish separately when changing registrations or routing.
 Verify JSON schema, private/no-store, query/method rejection, host/path
 isolation, CDN-overwritten spoofed metadata, and separate visitors without
 recording their real IP/location on an active custom domain. Per user direction,

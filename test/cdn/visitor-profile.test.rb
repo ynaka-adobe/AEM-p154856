@@ -118,16 +118,15 @@ class VisitorProfileCdnTest < Minitest::Test
     assert_equal original, current
   end
 
-  def test_independent_function_declaration_preserves_existing_functions_and_secrets
+  def test_generic_declaration_retires_legacy_functions_and_preserves_xsc_and_secrets
     yaml, status = Open3.capture2('git', 'show', "#{BASE}:config-eds/edgeFunctions.yaml", chdir: ROOT)
     assert status.success?
     current = YAML.safe_load(File.read(File.join(ROOT, 'config-eds/edgeFunctions.yaml')))
     functions = current.fetch('data').fetch('functions')
-    assert_equal 1, functions.count { |function| function == { 'name' => 'suresmile-visitor-profile' } }
-    assert_equal 1, functions.count { |function| function == { 'name' => 'visitor-profile' } }
-    assert_operator functions.length, :<=, 3
+    assert_equal %w[visitor-profile xsc-demo-cug], functions.map { |function| function.fetch('name') }
     original = YAML.safe_load(yaml)
-    original.fetch('data').fetch('functions').find { |function| function['name'] == 'dupont-persona' }['name'] = 'visitor-profile'
+    original.fetch('data').fetch('functions').reject! { |function| function['name'] == 'dupont-persona' }
+    original.fetch('data').fetch('functions').find { |function| function['name'] == 'suresmile-visitor-profile' }['name'] = 'visitor-profile'
     assert_equal original, current
   end
 
