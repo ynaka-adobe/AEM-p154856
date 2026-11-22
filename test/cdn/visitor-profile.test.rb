@@ -37,9 +37,9 @@ class VisitorProfileCdnTest < Minitest::Test
   end
 
   def test_exact_route_and_cache_policy_for_all_methods
-    route = DATA.fetch('originSelectors').fetch('rules').find { |r| r['name'] == 'route-suresmile-visitor-profile' }
+    route = DATA.fetch('originSelectors').fetch('rules').find { |r| r['name'] == 'route-visitor-profile' }
     assert_equal(
-      { 'type' => 'selectAemOrigin', 'originName' => 'edgefunction-suresmile-visitor-profile', 'skipCache' => true },
+      { 'type' => 'selectAemOrigin', 'originName' => 'edgefunction-visitor-profile', 'skipCache' => true },
       route.fetch('action')
     )
     HOSTS.each do |host|
@@ -56,7 +56,7 @@ class VisitorProfileCdnTest < Minitest::Test
         refute matches?(route.fetch('when'), host, path)
       end
     end
-    cache = DATA.fetch('responseTransformations').fetch('rules').find { |r| r['name'] == 'no-store-suresmile-visitor-profile' }
+    cache = DATA.fetch('responseTransformations').fetch('rules').find { |r| r['name'] == 'no-store-visitor-profile' }
     assert_equal route.fetch('when'), cache.fetch('when')
     assert_equal route.fetch('when'), DATA.fetch('requestTransformations').fetch('rules')[1].fetch('when')
     assert_equal(
@@ -70,10 +70,12 @@ class VisitorProfileCdnTest < Minitest::Test
 
   def test_spoofed_internal_headers_are_removed_then_replaced_from_platform
     rules = DATA.fetch('requestTransformations').fetch('rules').first(2)
-    assert_equal ['strip-suresmile-profile-metadata', 'set-suresmile-profile-metadata'], rules.map { |r| r['name'] }
+    assert_equal ['strip-visitor-profile-metadata', 'set-visitor-profile-metadata'], rules.map { |r| r['name'] }
     HOSTS.each do |host|
       ['/en-us', PATH].each do |path|
         headers = {
+          'x-visitor-profile-host' => HOST, 'x-visitor-profile-ip' => '198.51.100.99',
+          'x-visitor-profile-country' => 'XX',
           'x-suresmile-profile-host' => HOST, 'x-suresmile-profile-ip' => '198.51.100.99',
           'x-suresmile-profile-country' => 'XX'
         }
@@ -98,21 +100,20 @@ class VisitorProfileCdnTest < Minitest::Test
     end
   end
 
-  def test_only_existing_profile_host_conditions_change
+  def test_only_profile_and_retired_dupont_rules_change
     yaml, status = Open3.capture2('git', 'show', "#{BASE}:config-eds/cdn.yaml", chdir: ROOT)
     assert status.success?
     original = YAML.safe_load(yaml)
-    original.fetch('data').fetch('originSelectors').fetch('rules')
-            .reject! { |rule| rule['name'] == 'route-persona-home' }
     current = YAML.safe_load(File.read(File.join(ROOT, 'config-eds/cdn.yaml')))
     {
-      'originSelectors' => 'route-suresmile-visitor-profile',
-      'requestTransformations' => 'set-suresmile-profile-metadata',
-      'responseTransformations' => 'no-store-suresmile-visitor-profile'
-    }.each do |section, name|
-      before = original.fetch('data').fetch(section).fetch('rules').find { |r| r['name'] == name }
-      after = current.fetch('data').fetch(section).fetch('rules').find { |r| r['name'] == name }
-      after['when'] = before.fetch('when')
+      'originSelectors' => %w[route-suresmile-visitor-profile route-visitor-profile route-persona-home],
+      'requestTransformations' => %w[strip-suresmile-profile-metadata set-suresmile-profile-metadata
+                                     strip-visitor-profile-metadata set-visitor-profile-metadata],
+      'responseTransformations' => %w[no-store-suresmile-visitor-profile no-store-visitor-profile]
+    }.each do |section, names|
+      [original, current].each do |config|
+        config.fetch('data').fetch(section).fetch('rules').reject! { |rule| names.include?(rule['name']) }
+      end
     end
     assert_equal original, current
   end
