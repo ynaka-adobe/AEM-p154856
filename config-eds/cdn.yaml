@@ -9,22 +9,10 @@ data:
   # block once the secret exists as an actual pipeline variable.
   originSelectors:
     rules:
-      # Shared profile service; exact domains with verified shared registration.
+      # Shared profile service for every domain served by this CDN.
       # Keep the deployed function name. This must precede whole-site CUG rules.
       - name: route-suresmile-visitor-profile
-        when:
-          allOf:
-            - anyOf:
-                - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "granddesignrv.xsc.demo.adobe.com" }
-                - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "fmc-dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "parker.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
-            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        when: { reqProperty: originalPath, equals: "/api/visitor-profile" }
         action:
           type: selectAemOrigin
           originName: edgefunction-suresmile-visitor-profile
@@ -852,19 +840,7 @@ data:
           - { type: unset, reqHeader: x-suresmile-profile-ip }
           - { type: unset, reqHeader: x-suresmile-profile-country }
       - name: set-suresmile-profile-metadata
-        when:
-          allOf:
-            - anyOf:
-                - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "granddesignrv.xsc.demo.adobe.com" }
-                - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "fmc-dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "parker.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
-            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        when: { reqProperty: originalPath, equals: "/api/visitor-profile" }
         actions:
           - type: set
             reqHeader: x-suresmile-profile-host
@@ -949,19 +925,7 @@ data:
         actions:
           - { type: set, respHeader: Cache-Control, value: "no-store" }
       - name: no-store-suresmile-visitor-profile
-        when:
-          allOf:
-            - anyOf:
-                - { reqProperty: domain, equals: "suresmile.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "granddesignrv.xsc.demo.adobe.com" }
-                - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "xsc-demo.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "fmc-dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "dealer-communications.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "parker.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "chevronlubricants.ynaka-adobe.com" }
-                - { reqProperty: domain, equals: "toyotafinancial.ynaka-adobe.com" }
-            - { reqProperty: originalPath, equals: "/api/visitor-profile" }
+        when: { reqProperty: originalPath, equals: "/api/visitor-profile" }
         actions:
           - { type: set, respHeader: Cache-Control, value: "private, no-store" }
           - { type: set, respHeader: Surrogate-Control, value: "no-store" }

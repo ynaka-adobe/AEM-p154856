@@ -88,33 +88,23 @@ confirmed. The same-origin API still returned an EDS HTML 404; the upstream
 returned 200 JSON without credentials. These observations are a
 pre-deployment baseline, not evidence that the new rule is live.
 
-## Shared visitor profile (pending deployment)
+## Shared visitor profile
 
-The exact `/api/visitor-profile` path on the managed custom domains below selects
+The exact `/api/visitor-profile` path on **every domain served by this shared CDN** selects
 the independent `suresmile-visitor-profile` runtime in
 `edge-functions-suresmile`, bypassing CDN cache for every method.
 Only GET without query parameters is supported; writes return 405, lookup
-parameters return 400. Other paths and unlisted sites retain their routing. The handler
+parameters return 400. Other paths retain their routing. The handler
 has no CUG/Okta dependencies and does not read sessions or auth secrets.
 The doctor API remains a separate origin route.
 
 ### Managed coverage and naming
 
-The allowlist covers the following exact managed custom domains. Deployment
-preflight verified their Cloud Manager mappings and the same named-function
-registry through each domain; this is not a wildcard:
-
-| Managed host | Existing routing retained outside the profile path |
-| --- | --- |
-| `suresmile.ynaka-adobe.com` | Doctor proxy and language redirects |
-| `granddesignrv.xsc.demo.adobe.com` | Grand Design RV EDS site |
-| `dupont.ynaka-adobe.com` | Homepage persona decisioning |
-| `xsc-demo.ynaka-adobe.com` | CUG/auth runtime, including `/auth/geo` |
-| `fmc-dealer-communications.ynaka-adobe.com` | Communications CUG/API runtime |
-| `dealer-communications.ynaka-adobe.com` | Communications CUG/API runtime |
-| `parker.ynaka-adobe.com` | Product origin routing |
-| `chevronlubricants.ynaka-adobe.com` | Commerce origin routing and rewrites |
-| `toyotafinancial.ynaka-adobe.com` | HTML extension rewrites |
+There is no domain allowlist or per-site frontend installation. The route,
+metadata overwrite and privacy-header conditions match only the exact path.
+Existing and future domains receiving this CDN configuration inherit the endpoint
+without another hostname edit. The handler validates the CDN-provided hostname
+rather than selecting from a hard-coded set.
 
 The profile selector precedes the whole-site CUG selectors: this one public,
 requesting-visitor endpoint does not require a login or expose auth/session data.
@@ -123,16 +113,15 @@ No frontend Insights, Analytics, telemetry, or consent UI is installed.
 
 Grand Design RV's actual managed domain is `granddesignrv.xsc.demo.adobe.com`,
 verified as domain mapping `1620652` in program `154856` with the same function
-registry as SureSmile. It is included without installing Insights or analytics;
-the guessed `granddesignrv.ynaka-adobe.com` is not included.
-`3m.ynaka-adobe.com` has existing unrelated CDN rules but no Cloud Manager
-domain mapping in this inventory, and its function registry could not be reached.
-Its existing proxy/rewrites are unchanged; profile routing is excluded until
-its provider registration and HTTPS reachability are verified.
+registry as SureSmile. It receives the endpoint without installing Insights or
+analytics. Existing 3M proxies, doctor search, product rewrites and site/auth
+routes remain unchanged. Per user direction, inactive domains are not deployment
+gates; the shared rule applies even where a domain is not currently reachable.
+It does not provision missing domain mappings, certificates or function origins.
 `*.aem.page`, `*.aem.live`, and `*.aem.network` are
 provider-controlled origins, not endpoints controlled by these CDN rules.
-Other providers, arbitrary websites, and unlisted `*.ynaka-adobe.com` hosts
-are outside this change; no broad CORS workaround is provided.
+Other providers and websites not served by this CDN are outside this change;
+no broad CORS workaround is provided.
 
 The existing source directory contains only this dedicated profile service.
 Retain its deployed name `suresmile-visitor-profile`, existing internal header
@@ -142,8 +131,7 @@ convention; `edge-functions-visitorProfile` would not. Renaming the registered
 function is a separate coordinated migration of declaration, origin selector,
 manifest, package identity and upload target; the three function slots are
 already occupied, so do not add a fourth function for this feature.
-To add a verified managed host, update all three CDN host conditions and
-`PROFILE_HOSTS` in the handler together; the focused test checks their agreement.
+New domains served by this shared CDN need no profile host-list update.
 
 The CDN removes browser-supplied `x-suresmile-profile-*` metadata headers
 and replaces the three internal headers for this route from `domain`,
@@ -189,6 +177,9 @@ A failed runtime lookup returns explicit 503 rather than a default location.
 
 Every endpoint response, including errors, has `Cache-Control: private, no-store`
 and `Surrogate-Control: no-store`; the CDN also enforces those headers.
+`Surrogate-Control` is an origin-to-CDN instruction and may be consumed before
+delivery to browsers; the browser-facing privacy contract is `Cache-Control:
+private, no-store`.
 The function holds no per-visitor state and adds no IP/geo logging, persistence,
 cookies, CORS grants, or analytics forwarding. Unexpected lookup failures log
 only a fixed generic message without runtime error details.
@@ -215,10 +206,9 @@ configuration change is authorized by this implementation.
    a dedicated local context; its ignored `.aio` is not shared with other
    checkouts. Preserve the global App Builder context; do not switch or log
    it out to deploy this service.
-   Read-only runtime inspection found active `suresmile-visitor-profile`
-   package `2`, created November 10, 2026. No updated multi-host package was
-   uploaded or verified by this change, so successful authentication alone
-   does not satisfy the runtime-before-routing rollout prerequisite.
+   Successful authentication alone does not satisfy the runtime-before-routing
+   rollout prerequisite; the deployed handler must accept any valid hostname
+   supplied by this CDN rather than the older SureSmile/domain allowlist.
 2. After explicit deployment approval, build/package and upload the updated
    `suresmile-visitor-profile` WASM to the verified existing target using
    [the dedicated commands](../edge-functions-suresmile/README.md#deploy).
@@ -228,13 +218,10 @@ configuration change is authorized by this implementation.
    pipeline only after approval. Main commits automatically trigger it. Keep all
    function declarations, auth secrets, and unrelated domain settings intact.
    A config update alone does not update the WASM, or vice versa.
-4. Verify each listed host resolves `edgefunction-suresmile-visitor-profile`
-   to the intended updated package. The repository already reuses a named
-   XSC origin across sites, but local checks cannot prove that every provisioned
-   site exposes the same runtime registration. If a site's provider registration
-   differs, stop and establish its supported target; do not guess a new service,
-   deploy another package over CUG, or change DNS.
-5. On each verified custom domain, check GET JSON/schema, private/no-store
+4. Keep the verified shared function registration; do not deploy another package
+   over CUG, consume another named-function slot, or change DNS. Per user direction,
+   no inactive-domain verification is required to enable this shared route.
+5. On an active custom domain, check GET JSON/schema, private/no-store
    headers, query rejection (400), non-GET rejection (405), and spoofed internal
    headers overwritten by CDN context, including shielding hops. Confirm two
    distinct visitors cannot share responses without recording their IP/location.

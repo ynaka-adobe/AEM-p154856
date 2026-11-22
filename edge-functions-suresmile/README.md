@@ -10,10 +10,11 @@ required to build this runtime.** Adobe CLI authentication is still required
 to upload it.
 
 `../config-eds/edgeFunctions.yaml` registers the function.
-`../config-eds/cdn.yaml` routes only the explicitly allowlisted managed custom-domain
-`/api/visitor-profile` path to `edgefunction-suresmile-visitor-profile`.
-The handler's `PROFILE_HOSTS` must match the CDN's routing/metadata/cache
-conditions. Unlisted hosts and provider-owned EDS origins are not supported.
+`../config-eds/cdn.yaml` routes the exact `/api/visitor-profile` path on every
+domain served by this shared CDN to `edgefunction-suresmile-visitor-profile`.
+There is no hostname allowlist. The handler accepts a valid hostname only from
+CDN-overwritten metadata. Provider-owned EDS origins outside this CDN are not
+configured by these rules.
 The shared XSC runtime source no longer contains the profile branch.
 An older deployed XSC package may still contain that dormant branch until
 independently rebuilt; do not redeploy XSC merely to activate this function.
@@ -61,7 +62,7 @@ omit `region` until this updated standalone WASM is uploaded.
 The provider also supports nullable postal code, ASN/network, and connection
 metadata; this endpoint intentionally does not collect or expose those fields.
 
-See [the managed-host inventory and rollout boundary](../config-eds/README.md#shared-visitor-profile-pending-deployment).
+See [the shared-CDN coverage and rollout boundary](../config-eds/README.md#shared-visitor-profile).
 
 ## Build and package
 
@@ -123,9 +124,9 @@ Do not deploy `xsc-demo-cug` for this feature. The deploy command discovers the
 new runtime's packaged artifact under `pkg/`.
 Verify JSON schema, private/no-store, query/method rejection, host/path
 isolation, CDN-overwritten spoofed metadata, and separate visitors without
-recording their real IP/location on **every allowlisted domain**. Verify each
-provisioned site resolves the named origin to this updated package; if registrations
-are site-specific, establish the supported target before any additional upload.
+recording their real IP/location on an active custom domain. Per user direction,
+inactive-domain verification is not a rollout gate. Keep the existing verified
+shared registration; do not guess additional provider targets.
 No package upload here changes `*.aem.page`/`*.aem.live` routing.
 Do not claim availability until the actual custom-domain endpoints pass
 these checks.

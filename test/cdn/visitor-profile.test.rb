@@ -14,6 +14,7 @@ class VisitorProfileCdnTest < Minitest::Test
     xsc-demo.ynaka-adobe.com fmc-dealer-communications.ynaka-adobe.com
     dealer-communications.ynaka-adobe.com parker.ynaka-adobe.com
     chevronlubricants.ynaka-adobe.com toyotafinancial.ynaka-adobe.com
+    3m.ynaka-adobe.com new-demo.example.com another.customer.example
   ].freeze
 
   def matches?(condition, host, path, method = 'GET')
@@ -49,11 +50,7 @@ class VisitorProfileCdnTest < Minitest::Test
         assert_equal route, first, "#{host} #{method}"
       end
     end
-    [HOST + '.evil.example', 'unmanaged.ynaka-adobe.com', 'granddesignrv.ynaka-adobe.com',
-     '3m.ynaka-adobe.com', 'granddesignrv.xsc.demo.adobe.com.evil.example',
-     'main--suresmile--ynaka-adobe.aem.live', 'main--suresmile--ynaka-adobe.aem.page'].each do |host|
-      refute matches?(route.fetch('when'), host, PATH)
-    end
+    assert_equal({ 'reqProperty' => 'originalPath', 'equals' => PATH }, route.fetch('when'))
     HOSTS.each do |host|
       ['/en-us', PATH + '/', PATH + '/extra', '/api/location/doctors', '/auth/geo', '/auth/login', '/'].each do |path|
         refute matches?(route.fetch('when'), host, path)
@@ -74,27 +71,29 @@ class VisitorProfileCdnTest < Minitest::Test
   def test_spoofed_internal_headers_are_removed_then_replaced_from_platform
     rules = DATA.fetch('requestTransformations').fetch('rules').first(2)
     assert_equal ['strip-suresmile-profile-metadata', 'set-suresmile-profile-metadata'], rules.map { |r| r['name'] }
-    (HOSTS + ['unmanaged.ynaka-adobe.com']).each do |host|
-      headers = {
-        'x-suresmile-profile-host' => HOST, 'x-suresmile-profile-ip' => '198.51.100.99',
-        'x-suresmile-profile-country' => 'XX'
-      }
-      properties = { 'domain' => host, 'clientIp' => '203.0.113.7', 'clientCountry' => 'US' }
-      rules.each do |rule|
-        next unless matches?(rule.fetch('when'), host, PATH)
-        rule.fetch('actions').each do |action|
-          key = action.fetch('reqHeader')
-          if action.fetch('type') == 'unset'
-            headers.delete(key)
-          else
-            headers[key] = properties.fetch(action.fetch('value').fetch('reqProperty'))
+    HOSTS.each do |host|
+      ['/en-us', PATH].each do |path|
+        headers = {
+          'x-suresmile-profile-host' => HOST, 'x-suresmile-profile-ip' => '198.51.100.99',
+          'x-suresmile-profile-country' => 'XX'
+        }
+        properties = { 'domain' => host, 'clientIp' => '203.0.113.7', 'clientCountry' => 'US' }
+        rules.each do |rule|
+          next unless matches?(rule.fetch('when'), host, path)
+          rule.fetch('actions').each do |action|
+            key = action.fetch('reqHeader')
+            if action.fetch('type') == 'unset'
+              headers.delete(key)
+            else
+              headers[key] = properties.fetch(action.fetch('value').fetch('reqProperty'))
+            end
           end
         end
-      end
-      if HOSTS.include?(host)
-        assert_equal [host, '203.0.113.7', 'US'], headers.values
-      else
-        assert_empty headers
+        if path == PATH
+          assert_equal [host, '203.0.113.7', 'US'], headers.values
+        else
+          assert_empty headers
+        end
       end
     end
   end
@@ -131,33 +130,5 @@ class VisitorProfileCdnTest < Minitest::Test
     assert status.success?
     assert_equal original, File.read(File.join(ROOT, 'edge-functions-xsc-demo/src/index.js'))
     refute File.exist?(File.join(ROOT, 'edge-functions-xsc-demo/src/visitor-profile.js'))
-  end
-
-  def test_runtime_allowlist_matches_cdn_and_existing_managed_host_inventory
-    hosts, status = Open3.capture2(
-      'node', '--input-type=module', '-e',
-      "import { PROFILE_HOSTS } from './edge-functions-suresmile/src/visitor-profile.js'; console.log(JSON.stringify([...PROFILE_HOSTS]));",
-      chdir: ROOT
-    )
-    assert status.success?
-    require 'json'
-    assert_equal HOSTS.sort, JSON.parse(hosts).sort
-    condition = DATA.fetch('originSelectors').fetch('rules').first.fetch('when')
-    actual = condition.fetch('allOf').first.fetch('anyOf').map { |child| child.fetch('equals') }
-    assert_equal HOSTS.sort, actual.sort
-    yaml, status = Open3.capture2('git', 'show', "#{BASE}:config-eds/cdn.yaml", chdir: ROOT)
-    assert status.success?
-    inventory = YAML.safe_load(yaml).fetch('data').values.flat_map { |section| section.fetch('rules', []) }
-    domains = []
-    collect = lambda do |node|
-      if node.is_a?(Hash) && node['reqProperty'] == 'domain' && node.key?('equals')
-        domains << node.fetch('equals')
-      end
-      node.each_value { |child| collect.call(child) } if node.is_a?(Hash)
-      node.each { |child| collect.call(child) } if node.is_a?(Array)
-    end
-    collect.call(inventory)
-    assert_equal ['3m.ynaka-adobe.com'], domains.uniq - HOSTS
-    assert_equal ['granddesignrv.xsc.demo.adobe.com'], HOSTS - domains.uniq
   end
 end

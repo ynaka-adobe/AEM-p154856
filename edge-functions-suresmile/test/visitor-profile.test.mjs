@@ -1,9 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handleVisitorProfile, visitorProfile, PROFILE_HOSTS } from '../src/visitor-profile.js';
+import { handleVisitorProfile, visitorProfile } from '../src/visitor-profile.js';
 
 const host = 'suresmile.ynaka-adobe.com';
 const path = '/api/visitor-profile';
+const hosts = [
+  host, 'granddesignrv.xsc.demo.adobe.com', 'xsc-demo.ynaka-adobe.com',
+  '3m.ynaka-adobe.com', 'new-demo.example.com', 'another.customer.example',
+];
 const platform = {
   'x-suresmile-profile-host': host,
   'x-suresmile-profile-ip': '203.0.113.7',
@@ -108,15 +112,17 @@ test('no query lookups or writes; all error responses are no-store', () => {
     assert.equal(response.headers.get('allow'), 'GET');
     noStore(response);
   }
-  assert.equal(handleVisitorProfile(new Request(`https://unmanaged.ynaka-adobe.com${path}`), noLookup), null);
+  const missing = handleVisitorProfile(new Request(`https://new-demo.example.com${path}`), noLookup);
+  assert.equal(missing.status, 503);
+  noStore(missing);
   assert.equal(handleVisitorProfile(new Request(`https://${host}/en-us`), noLookup), null);
   const response = handleVisitorProfile(new Request(`https://${host}${path}/extra`, { headers: platform }), noLookup);
   assert.equal(response.status, 404);
   noStore(response);
 });
 
-test('all managed hosts work through CDN metadata, including internal runtime URLs', async () => {
-  for (const site of PROFILE_HOSTS) {
+test('any CDN-served host works through platform metadata, including internal runtime URLs', async () => {
+  for (const site of hosts) {
     const headers = { ...platform, 'x-suresmile-profile-host': site };
     for (const origin of [`https://${site}`, 'https://internal.example']) {
       const response = handleVisitorProfile(new Request(`${origin}${path}`, { headers }), () => geo);
@@ -135,19 +141,17 @@ test('all managed hosts work through CDN metadata, including internal runtime UR
   }
 });
 
-test('unmanaged host metadata never enables geolocation', () => {
+test('missing or malformed CDN host metadata never enables geolocation', () => {
   for (const site of [
-    'unmanaged.ynaka-adobe.com', 'suresmile.ynaka-adobe.com.evil.example',
-    'main--suresmile--ynaka-adobe.aem.live', 'main--suresmile--ynaka-adobe.aem.page',
-    'granddesignrv.ynaka-adobe.com', '3m.ynaka-adobe.com',
-    'granddesignrv.xsc.demo.adobe.com.evil.example',
+    '', 'bad host', 'example.com:443', 'example.com,other.example',
+    'https://example.com', 'example..com', '-example.com',
+    'example-.com', `${'a'.repeat(64)}.example`, 'a'.repeat(254),
   ]) {
     const response = handleVisitorProfile(new Request(`https://${host}${path}`, {
       headers: { ...platform, 'x-suresmile-profile-host': site },
     }), noLookup);
     assert.equal(response.status, 503);
     noStore(response);
-    assert.equal(handleVisitorProfile(new Request(`https://${site}${path}`), noLookup), null);
   }
 });
 
