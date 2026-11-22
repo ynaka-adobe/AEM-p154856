@@ -102,6 +102,8 @@ class VisitorProfileCdnTest < Minitest::Test
     yaml, status = Open3.capture2('git', 'show', "#{BASE}:config-eds/cdn.yaml", chdir: ROOT)
     assert status.success?
     original = YAML.safe_load(yaml)
+    original.fetch('data').fetch('originSelectors').fetch('rules')
+            .reject! { |rule| rule['name'] == 'route-persona-home' }
     current = YAML.safe_load(File.read(File.join(ROOT, 'config-eds/cdn.yaml')))
     {
       'originSelectors' => 'route-suresmile-visitor-profile',
@@ -121,8 +123,11 @@ class VisitorProfileCdnTest < Minitest::Test
     current = YAML.safe_load(File.read(File.join(ROOT, 'config-eds/edgeFunctions.yaml')))
     functions = current.fetch('data').fetch('functions')
     assert_equal 1, functions.count { |function| function == { 'name' => 'suresmile-visitor-profile' } }
+    assert_equal 1, functions.count { |function| function == { 'name' => 'visitor-profile' } }
     assert_operator functions.length, :<=, 3
-    assert_equal YAML.safe_load(yaml), current
+    original = YAML.safe_load(yaml)
+    original.fetch('data').fetch('functions').find { |function| function['name'] == 'dupont-persona' }['name'] = 'visitor-profile'
+    assert_equal original, current
   end
 
   def test_xsc_auth_and_geo_source_unchanged

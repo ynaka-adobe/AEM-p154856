@@ -1,8 +1,7 @@
 # Shared visitor profile edge function
 
-Independent Fastly JavaScript runtime named `suresmile-visitor-profile`.
-The existing name and source directory are retained for deployment compatibility;
-this is a dedicated reusable service, not a multipurpose SureSmile runtime.
+Independent Fastly JavaScript runtime named **`visitor-profile`**, packaged from
+`edge-functions-visitor-profile`. It replaces the SureSmile-branded function.
 It imports only the native `fastly:geolocation` API and the profile handler.
 There are no XSC, Okta, Adobe Analytics, origin proxy, config-store, secret-store,
 or generated build-environment dependencies. **No `.env` or auth secret is
@@ -11,7 +10,7 @@ to upload it.
 
 `../config-eds/edgeFunctions.yaml` registers the function.
 `../config-eds/cdn.yaml` routes the exact `/api/visitor-profile` path on every
-domain served by this shared CDN to `edgefunction-suresmile-visitor-profile`.
+domain served by this shared CDN to `edgefunction-visitor-profile`.
 There is no hostname allowlist. The handler accepts a valid hostname only from
 CDN-overwritten metadata. Provider-owned EDS origins outside this CDN are not
 configured by these rules.
@@ -37,7 +36,7 @@ The UI path and JSON contract are unchanged:
 ```
 
 GET only, no query parameters, no arbitrary IP lookup. The handler trusts only
-the CDN-overwritten `x-suresmile-profile-host`, `-ip`, and `-country` headers
+the CDN-overwritten `x-visitor-profile-host`, `-ip`, and `-country` headers
 derived from platform `domain`, `clientIp`, and `clientCountry`. It never uses
 browser `X-Forwarded-For` / `Fastly-Client-IP` or the function node's address.
 The global CDN sanitation removes spoofed copies even on other hosts; do not
@@ -90,8 +89,12 @@ that public CDN metadata is authentic or that the live route is active.
 rollout instructions, not authorization to run setup or deployment.
 Main commits automatically trigger the `/config-eds` configuration pipeline.
 Confirm the existing function registration before uploading.
-Registration/routing and WASM upload are separate steps. Upload the multi-host
-handler before activating expanded routing; the old handler accepts only SureSmile.
+Registration/routing and WASM upload are separate steps. The generic migration
+first removes the inactive DuPont declaration/homepage route and registers
+`visitor-profile` while keeping the legacy profile origin serving. Upload the
+generic package before switching the CDN origin and metadata header names.
+Then remove the obsolete `suresmile-visitor-profile` declaration. Preserve XSC;
+do not consume a fourth function slot.
 Confirm the IMS org owning program `154856`; an App Builder workspace selection
 does not verify Edge Functions authentication or deployment context.
 
@@ -116,8 +119,8 @@ After the new function is registered and the target is verified:
 
 ```sh
 aio aem edge-functions build
-aio aem edge-functions deploy suresmile-visitor-profile
-aio aem edge-functions packages suresmile-visitor-profile --limit 1
+aio aem edge-functions deploy visitor-profile --package pkg/visitor-profile.tar.gz
+aio aem edge-functions packages visitor-profile --limit 1
 ```
 
 Do not deploy `xsc-demo-cug` for this feature. The deploy command discovers the

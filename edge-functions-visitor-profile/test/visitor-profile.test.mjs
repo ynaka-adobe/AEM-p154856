@@ -9,9 +9,9 @@ const hosts = [
   '3m.ynaka-adobe.com', 'new-demo.example.com', 'another.customer.example',
 ];
 const platform = {
-  'x-suresmile-profile-host': host,
-  'x-suresmile-profile-ip': '203.0.113.7',
-  'x-suresmile-profile-country': 'US',
+  'x-visitor-profile-host': host,
+  'x-visitor-profile-ip': '203.0.113.7',
+  'x-visitor-profile-country': 'US',
 };
 const req = (headers = platform, suffix = '', method = 'GET') => new Request(
   `https://${host}${path}${suffix}`, { method, headers },
@@ -28,9 +28,9 @@ test('only CDN metadata is used, not spoofed forwarding headers or runtime node'
   const response = handleVisitorProfile(req({
     ...platform, 'fastly-client-ip': '198.51.100.9',
     'x-forwarded-for': '198.51.100.9', 'x-forwarded-host': 'evil.example',
-    'x-suresmile-profile-region': 'ZZ',
+    'x-visitor-profile-region': 'ZZ',
   }), (ip) => {
-    assert.equal(ip, platform['x-suresmile-profile-ip']);
+    assert.equal(ip, platform['x-visitor-profile-ip']);
     return geo;
   });
   assert.equal(response.status, 200);
@@ -43,7 +43,7 @@ test('only CDN metadata is used, not spoofed forwarding headers or runtime node'
 
 test('unavailable metadata is null, never CDN-node or default location', async () => {
   const response = handleVisitorProfile(req({
-    'x-suresmile-profile-host': host, 'fastly-client-ip': '198.51.100.9',
+    'x-visitor-profile-host': host, 'fastly-client-ip': '198.51.100.9',
     'x-forwarded-for': '198.51.100.9',
   }), noLookup);
   noStore(response);
@@ -58,14 +58,14 @@ test('unavailable metadata is null, never CDN-node or default location', async (
 
 test('strict IP validation before the platform lookup', async () => {
   for (const ip of ['203.0.113.7', '2001:db8::7', '::ffff:192.0.2.1']) {
-    const response = handleVisitorProfile(req({ ...platform, 'x-suresmile-profile-ip': ip }), (value) => {
+    const response = handleVisitorProfile(req({ ...platform, 'x-visitor-profile-ip': ip }), (value) => {
       assert.equal(value, ip);
       return null;
     });
     assert.equal((await response.json()).ip, ip);
   }
   for (const ip of ['999.1.1.1', '1.2.3', '01.2.3.4', ':::', '203.0.113.7, 10.0.0.1', '<script>', 'fe80::1%eth0']) {
-    const response = handleVisitorProfile(req({ ...platform, 'x-suresmile-profile-ip': ip }), noLookup);
+    const response = handleVisitorProfile(req({ ...platform, 'x-visitor-profile-ip': ip }), noLookup);
     assert.equal((await response.json()).ip, null);
   }
 });
@@ -123,7 +123,7 @@ test('no query lookups or writes; all error responses are no-store', () => {
 
 test('any CDN-served host works through platform metadata, including internal runtime URLs', async () => {
   for (const site of hosts) {
-    const headers = { ...platform, 'x-suresmile-profile-host': site };
+    const headers = { ...platform, 'x-visitor-profile-host': site };
     for (const origin of [`https://${site}`, 'https://internal.example']) {
       const response = handleVisitorProfile(new Request(`${origin}${path}`, { headers }), () => geo);
       assert.equal(response.status, 200);
@@ -148,7 +148,7 @@ test('missing or malformed CDN host metadata never enables geolocation', () => {
     'example-.com', `${'a'.repeat(64)}.example`, 'a'.repeat(254),
   ]) {
     const response = handleVisitorProfile(new Request(`https://${host}${path}`, {
-      headers: { ...platform, 'x-suresmile-profile-host': site },
+      headers: { ...platform, 'x-visitor-profile-host': site },
     }), noLookup);
     assert.equal(response.status, 503);
     noStore(response);
@@ -158,9 +158,9 @@ test('missing or malformed CDN host metadata never enables geolocation', () => {
 test('successive visitors cannot share state; lookup failure is explicit without logging IP', async () => {
   const first = await handleVisitorProfile(req(), () => geo).json();
   const secondResponse = handleVisitorProfile(new Request(`https://xsc-demo.ynaka-adobe.com${path}`, { headers: {
-    ...platform, 'x-suresmile-profile-ip': '198.51.100.8',
-    'x-suresmile-profile-host': 'xsc-demo.ynaka-adobe.com',
-    'x-suresmile-profile-country': 'CA',
+    ...platform, 'x-visitor-profile-ip': '198.51.100.8',
+    'x-visitor-profile-host': 'xsc-demo.ynaka-adobe.com',
+    'x-visitor-profile-country': 'CA',
   } }), () => null);
   noStore(secondResponse);
   const second = await secondResponse.json();

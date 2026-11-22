@@ -1,5 +1,9 @@
 # DuPont Edge Functions
 
+**Retired:** the inactive `dupont-persona` registration and its homepage route
+are removed from the shared configuration. This directory is retained as archived
+source, not an active deployment target. Do not run its historical deploy commands.
+
 Imported from `ynaka-adobe/dupont` at commit
 `dd747768f1a7d2501661e8ea571309d76994233d`.
 

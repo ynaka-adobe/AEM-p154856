@@ -1,8 +1,8 @@
 authors = []
-description = "SureSmile requesting visitor CDN profile"
+description = "Generic requesting visitor CDN profile"
 language = "javascript"
 manifest_version = 3
-name = "suresmile-visitor-profile"
+name = "visitor-profile"
 service_id = ""
 
 [scripts]

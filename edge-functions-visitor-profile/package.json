@@ -1,8 +1,8 @@
 {
   "type": "module",
   "private": true,
-  "name": "suresmile-visitor-profile-edge-function",
-  "description": "Independent, uncached CDN visitor profile for the SureSmile demo",
+  "name": "visitor-profile-edge-function",
+  "description": "Independent, uncached visitor profile for every shared-CDN domain",
   "dependencies": {
     "@fastly/js-compute": "^3.46.0"
   },

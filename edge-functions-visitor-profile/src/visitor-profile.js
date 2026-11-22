@@ -62,7 +62,7 @@ export function visitorProfile(ip, country, geo) {
 // Fastly-Client-IP, query parameters, or the function's CDN-node client.
 export function handleVisitorProfile(request, lookup) {
   const url = new URL(request.url);
-  const host = request.headers.get('x-suresmile-profile-host');
+  const host = request.headers.get('x-visitor-profile-host');
   if (!validHost(host)) {
     if (url.pathname !== PATH) return null;
     return new Response(JSON.stringify({ error: 'CDN visitor metadata unavailable' }), {
@@ -82,15 +82,15 @@ export function handleVisitorProfile(request, lookup) {
       status: 400, headers: HEADERS,
     });
   }
-  const ip = validIp(request.headers.get('x-suresmile-profile-ip'));
-  const country = countryCode(request.headers.get('x-suresmile-profile-country'));
+  const ip = validIp(request.headers.get('x-visitor-profile-ip'));
+  const country = countryCode(request.headers.get('x-visitor-profile-country'));
   let geo = null;
   if (ip) {
     try {
       geo = lookup(ip);
     } catch {
       // Do not log the address or runtime error (which may contain it).
-      console.error('suresmile visitor profile: platform geolocation lookup failed');
+      console.error('visitor profile: platform geolocation lookup failed');
       return new Response(JSON.stringify({ error: 'Platform geolocation unavailable' }), {
         status: 503, headers: HEADERS,
       });

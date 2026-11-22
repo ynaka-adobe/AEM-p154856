@@ -91,8 +91,8 @@ pre-deployment baseline, not evidence that the new rule is live.
 ## Shared visitor profile
 
 The exact `/api/visitor-profile` path on **every domain served by this shared CDN** selects
-the independent `suresmile-visitor-profile` runtime in
-`edge-functions-suresmile`, bypassing CDN cache for every method.
+the independent **`visitor-profile`** runtime in
+`edge-functions-visitor-profile`, bypassing CDN cache for every method.
 Only GET without query parameters is supported; writes return 405, lookup
 parameters return 400. Other paths retain their routing. The handler
 has no CUG/Okta dependencies and does not read sessions or auth secrets.
@@ -123,17 +123,16 @@ provider-controlled origins, not endpoints controlled by these CDN rules.
 Other providers and websites not served by this CDN are outside this change;
 no broad CORS workaround is provided.
 
-The existing source directory contains only this dedicated profile service.
-Retain its deployed name `suresmile-visitor-profile`, existing internal header
-names, and directory to avoid a deployment migration. A future source-only rename
-to `edge-functions-visitor-profile` would follow the repository's kebab-case
-convention; `edge-functions-visitorProfile` would not. Renaming the registered
-function is a separate coordinated migration of declaration, origin selector,
-manifest, package identity and upload target; the three function slots are
-already occupied, so do not add a fourth function for this feature.
+The source directory is `edge-functions-visitor-profile`, and the deployed
+function/package name is `visitor-profile`. The inactive `dupont-persona`
+declaration and its homepage origin selector are removed to free capacity.
+Register and upload the generic replacement before changing the profile origin
+and internal metadata names; retire `suresmile-visitor-profile` only afterward.
+XSC remains untouched. The final declarations are `visitor-profile` and
+`xsc-demo-cug`; no fourth function slot is needed.
 New domains served by this shared CDN need no profile host-list update.
 
-The CDN removes browser-supplied `x-suresmile-profile-*` metadata headers
+The CDN removes browser-supplied `x-visitor-profile-*` metadata headers
 and replaces the three internal headers for this route from `domain`,
 `clientIp`, and `clientCountry`. It does not use `forwardedIp`,
 `X-Forwarded-For`, `Fastly-Client-IP`, or the edge function's client address
@@ -209,11 +208,12 @@ configuration change is authorized by this implementation.
    Successful authentication alone does not satisfy the runtime-before-routing
    rollout prerequisite; the deployed handler must accept any valid hostname
    supplied by this CDN rather than the older SureSmile/domain allowlist.
-2. After explicit deployment approval, build/package and upload the updated
-   `suresmile-visitor-profile` WASM to the verified existing target using
-   [the dedicated commands](../edge-functions-suresmile/README.md#deploy).
-   Upload the multi-host handler **before** publishing the expanded CDN rules;
-   an old SureSmile-only handler will reject new hosts.
+2. After explicit deployment approval, register `visitor-profile` in the freed
+   DuPont slot while retaining the legacy profile origin. Build/package and
+   upload the generic WASM to that verified registration using
+   [the dedicated commands](../edge-functions-visitor-profile/README.md#deploy).
+   Upload the generic handler **before** switching the origin and metadata
+   header names, then retire the obsolete SureSmile registration.
 3. Publish `/config-eds` through the existing Edge Delivery configuration
    pipeline only after approval. Main commits automatically trigger it. Keep all
    function declarations, auth secrets, and unrelated domain settings intact.
@@ -236,7 +236,7 @@ these provider/trust-boundary checks pass. No new secret is required.
 Focused checks:
 
 ```sh
-node --test edge-functions-suresmile/test/visitor-profile.test.mjs
+node --test edge-functions-visitor-profile/test/visitor-profile.test.mjs
 ruby test/cdn/visitor-profile.test.rb
 ruby test/cdn/suresmile-proxy.test.rb
 ```

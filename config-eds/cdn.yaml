@@ -89,12 +89,6 @@ data:
           type: selectOrigin
           originName: order-3m
           skipCache: true
-      - name: route-persona-home
-        when:
-          allOf:
-            - { reqProperty: domain, equals: "dupont.ynaka-adobe.com" }
-            - { reqProperty: path, equals: "/" }
-        action: { type: selectAemOrigin, originName: edgefunction-dupont-persona, skipCache: true }
       # xsc-demo Closed User Groups: every page/fragment/media request on
       # xsc-demo.ynaka-adobe.com goes through the xsc-demo-cug edge function,
       # which enforces Okta login. Code paths go through it too, because the
