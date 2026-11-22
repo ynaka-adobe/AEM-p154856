@@ -126,7 +126,12 @@ no broad CORS workaround is provided.
 The source directory is `edge-functions-visitor-profile`, and the deployed
 function/package name is `visitor-profile`. The inactive `dupont-persona`
 registration and its homepage origin selector are retired; the obsolete
-`suresmile-visitor-profile` registration is also retired. The generic replacement
+`suresmile-visitor-profile` declaration and CDN origin references are removed.
+Its package remains listed in the provider registry after the completed pipeline;
+physical deletion is not confirmed. The installed CLI has no deletion command
+and the exact named-resource DELETE returns 404, so physical cleanup needs a
+provider-supported administrative action rather than guessed IDs or endpoints.
+The generic replacement
 was registered and uploaded before changing the profile origin and internal
 metadata names; the legacy runtime remained available until routing succeeded.
 XSC remains untouched. The final declarations are `visitor-profile` and

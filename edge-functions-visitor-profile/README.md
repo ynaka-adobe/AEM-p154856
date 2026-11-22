@@ -89,8 +89,13 @@ Deployment changes public infrastructure; run these commands only with approval.
 Main commits automatically trigger the `/config-eds` configuration pipeline.
 Confirm the existing function registration before uploading.
 Registration/routing and WASM upload are separate steps. The generic function is
-registered as `visitor-profile`; inactive `dupont-persona` and the legacy
-`suresmile-visitor-profile` registrations are retired. For another runtime-name
+registered as `visitor-profile`; inactive `dupont-persona` is retired. The legacy
+`suresmile-visitor-profile` declaration and CDN origin references are removed,
+but its package still appears in the provider registry. Physical deletion is
+not confirmed: the installed CLI has no delete operation and DELETE on that
+verified named resource returns 404. Use a provider-supported administrative
+action for physical cleanup; do not guess IDs or alternate destructive endpoints.
+For another runtime-name
 migration, register and upload the replacement before switching the CDN origin
 and metadata, and retire the old registration only after routing succeeds.
 Preserve XSC; do not deploy this package over `xsc-demo-cug`.
