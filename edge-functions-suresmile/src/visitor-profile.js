@@ -1,4 +1,14 @@
-const HOST = 'suresmile.ynaka-adobe.com';
+export const PROFILE_HOSTS = new Set([
+  'suresmile.ynaka-adobe.com',
+  '3m.ynaka-adobe.com',
+  'dupont.ynaka-adobe.com',
+  'xsc-demo.ynaka-adobe.com',
+  'fmc-dealer-communications.ynaka-adobe.com',
+  'dealer-communications.ynaka-adobe.com',
+  'parker.ynaka-adobe.com',
+  'chevronlubricants.ynaka-adobe.com',
+  'toyotafinancial.ynaka-adobe.com',
+]);
 const PATH = '/api/visitor-profile';
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -23,7 +33,7 @@ function validIp(value) {
 function text(value) {
   if (typeof value !== 'string') return null;
   const clean = value.trim();
-  return clean && clean !== '?' && clean.length <= 120
+  return clean && clean !== '?' && clean.length <= 100
     && !/[\u0000-\u001f\u007f<>&]/.test(clean) ? clean : null;
 }
 
@@ -59,8 +69,8 @@ export function visitorProfile(ip, country, geo) {
 export function handleVisitorProfile(request, lookup) {
   const url = new URL(request.url);
   const host = request.headers.get('x-suresmile-profile-host');
-  if (host !== HOST) {
-    if (url.hostname !== HOST || url.pathname !== PATH) return null;
+  if (!PROFILE_HOSTS.has(host)) {
+    if (!PROFILE_HOSTS.has(url.hostname) || url.pathname !== PATH) return null;
     return new Response(JSON.stringify({ error: 'CDN visitor metadata unavailable' }), {
       status: 503, headers: HEADERS,
     });

@@ -2,7 +2,7 @@ kind: "EdgeFunctions"
 version: "1"
 data:
   functions:
-    # Independent, secret-free visitor profile for SureSmile only
+    # Shared, secret-free visitor profile; retain the deployed function name
     # (see edge-functions-suresmile/README.md).
     - name: suresmile-visitor-profile
     # DuPont persona decisioning (see edge-functions-dupont/README.md).

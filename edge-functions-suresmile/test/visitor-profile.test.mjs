@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handleVisitorProfile, visitorProfile } from '../src/visitor-profile.js';
+import { handleVisitorProfile, visitorProfile, PROFILE_HOSTS } from '../src/visitor-profile.js';
 
 const host = 'suresmile.ynaka-adobe.com';
 const path = '/api/visitor-profile';
@@ -67,9 +67,10 @@ test('strict IP validation before the platform lookup', async () => {
 });
 
 test('country and text sanitization; coordinate pair is finite numeric and in range', () => {
-  for (const bad of ['<script>', 'Town\nInjected', '?', '', 'a'.repeat(121), 12]) {
+  for (const bad of ['<script>', 'Town\nInjected', '?', '', 'a'.repeat(101), 12]) {
     assert.equal(visitorProfile(null, null, { city: bad }).city, null);
   }
+  assert.equal(visitorProfile(null, null, { city: 'a'.repeat(100) }).city.length, 100);
   assert.equal(visitorProfile(null, '??', { country_name: 'Example Country' }).country, 'Example Country');
   for (const coordinates of [
     { latitude: '40', longitude: -70 }, { latitude: 40, longitude: null },
@@ -107,19 +108,55 @@ test('no query lookups or writes; all error responses are no-store', () => {
     assert.equal(response.headers.get('allow'), 'GET');
     noStore(response);
   }
-  assert.equal(handleVisitorProfile(new Request(`https://xsc-demo.ynaka-adobe.com${path}`), noLookup), null);
+  assert.equal(handleVisitorProfile(new Request(`https://unmanaged.ynaka-adobe.com${path}`), noLookup), null);
   assert.equal(handleVisitorProfile(new Request(`https://${host}/en-us`), noLookup), null);
   const response = handleVisitorProfile(new Request(`https://${host}${path}/extra`, { headers: platform }), noLookup);
   assert.equal(response.status, 404);
   noStore(response);
 });
 
+test('all managed hosts work through CDN metadata, including internal runtime URLs', async () => {
+  for (const site of PROFILE_HOSTS) {
+    const headers = { ...platform, 'x-suresmile-profile-host': site };
+    for (const origin of [`https://${site}`, 'https://internal.example']) {
+      const response = handleVisitorProfile(new Request(`${origin}${path}`, { headers }), () => geo);
+      assert.equal(response.status, 200);
+      noStore(response);
+      assert.deepEqual(await response.json(), visitorProfile('203.0.113.7', 'US', geo));
+    }
+    const missing = handleVisitorProfile(new Request(`https://${site}${path}`, {
+      headers: { 'x-forwarded-host': host, 'x-forwarded-for': '198.51.100.9' },
+    }), noLookup);
+    assert.equal(missing.status, 503);
+    noStore(missing);
+    for (const other of ['/auth/geo', '/auth/login', '/', '/api/fmc', `${path}/`]) {
+      assert.equal(handleVisitorProfile(new Request(`https://${site}${other}`), noLookup), null);
+    }
+  }
+});
+
+test('unmanaged host metadata never enables geolocation', () => {
+  for (const site of [
+    'unmanaged.ynaka-adobe.com', 'suresmile.ynaka-adobe.com.evil.example',
+    'main--suresmile--ynaka-adobe.aem.live', 'main--suresmile--ynaka-adobe.aem.page',
+    'granddesignrv.ynaka-adobe.com',
+  ]) {
+    const response = handleVisitorProfile(new Request(`https://${host}${path}`, {
+      headers: { ...platform, 'x-suresmile-profile-host': site },
+    }), noLookup);
+    assert.equal(response.status, 503);
+    noStore(response);
+    assert.equal(handleVisitorProfile(new Request(`https://${site}${path}`), noLookup), null);
+  }
+});
+
 test('successive visitors cannot share state; lookup failure is explicit without logging IP', async () => {
   const first = await handleVisitorProfile(req(), () => geo).json();
-  const secondResponse = handleVisitorProfile(req({
+  const secondResponse = handleVisitorProfile(new Request(`https://xsc-demo.ynaka-adobe.com${path}`, { headers: {
     ...platform, 'x-suresmile-profile-ip': '198.51.100.8',
+    'x-suresmile-profile-host': 'xsc-demo.ynaka-adobe.com',
     'x-suresmile-profile-country': 'CA',
-  }), () => null);
+  } }), () => null);
   noStore(secondResponse);
   const second = await secondResponse.json();
   assert.notEqual(second.ip, first.ip);

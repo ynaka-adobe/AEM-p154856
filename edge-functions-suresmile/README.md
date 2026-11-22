@@ -1,6 +1,8 @@
-# SureSmile visitor profile edge function
+# Shared visitor profile edge function
 
 Independent Fastly JavaScript runtime named `suresmile-visitor-profile`.
+The existing name and source directory are retained for deployment compatibility;
+this is a dedicated reusable service, not a multipurpose SureSmile runtime.
 It imports only the native `fastly:geolocation` API and the profile handler.
 There are no XSC, Okta, Adobe Analytics, origin proxy, config-store, secret-store,
 or generated build-environment dependencies. **No `.env` or auth secret is
@@ -8,8 +10,10 @@ required to build this runtime.** Adobe CLI authentication is still required
 to upload it.
 
 `../config-eds/edgeFunctions.yaml` registers the function.
-`../config-eds/cdn.yaml` routes only the exact SureSmile custom-domain
+`../config-eds/cdn.yaml` routes only the explicitly allowlisted managed custom-domain
 `/api/visitor-profile` path to `edgefunction-suresmile-visitor-profile`.
+The handler's `PROFILE_HOSTS` must match the CDN's routing/metadata/cache
+conditions. Unlisted hosts and provider-owned EDS origins are not supported.
 The shared XSC runtime source no longer contains the profile branch.
 An older deployed XSC package may still contain that dormant branch until
 independently rebuilt; do not redeploy XSC merely to activate this function.
@@ -43,8 +47,10 @@ checked and labelled `"approximate IP geolocation"`, never GPS or an invented
 accuracy radius. All responses (including errors and unknown routes) are
 private/no-store; CDN routing skips cache. No profile storage, cookies,
 cross-origin grants, third-party lookup, or sensitive logs are added.
-The UI must require explicit profile-purpose consent and `?insights=1`,
-clear on withdrawal, and never send these fields to analytics or storage.
+Consumers must require explicit profile-purpose consent, clear on withdrawal,
+and never forward these fields to analytics or logs. No frontend, Insights or
+telemetry installation is part of the shared route. SureSmile's existing
+separately consented display/tab cache remains unchanged.
 
 `region` is an additive nullable **state/region code**, taken only from
 Fastly's `geo.region` country subdivision metadata. It preserves an observed
@@ -55,7 +61,7 @@ omit `region` until this updated standalone WASM is uploaded.
 The provider also supports nullable postal code, ASN/network, and connection
 metadata; this endpoint intentionally does not collect or expose those fields.
 
-See [the full CDN contract](../config-eds/README.md#suresmile-visitor-profile-pending-deployment).
+See [the managed-host inventory and rollout boundary](../config-eds/README.md#shared-visitor-profile-pending-deployment).
 
 ## Build and package
 
@@ -79,9 +85,14 @@ that public CDN metadata is authentic or that the live route is active.
 
 ## Deploy
 
-Main commits automatically trigger the `/config-eds` configuration pipeline
-in this program. Confirm that it registers this new name before uploading.
-Registration/routing and WASM upload are separate steps.
+**A separate explicit deployment decision is required.** The following are
+rollout instructions, not authorization to run setup or deployment.
+Main commits automatically trigger the `/config-eds` configuration pipeline.
+Confirm the existing function registration before uploading.
+Registration/routing and WASM upload are separate steps. Upload the multi-host
+handler before activating expanded routing; the old handler accepts only SureSmile.
+Confirm the IMS org owning program `154856`; an App Builder workspace selection
+does not verify Edge Functions authentication or deployment context.
 
 In this runtime's directory, select and verify the intended target:
 
@@ -112,6 +123,9 @@ Do not deploy `xsc-demo-cug` for this feature. The deploy command discovers the
 new runtime's packaged artifact under `pkg/`.
 Verify JSON schema, private/no-store, query/method rejection, host/path
 isolation, CDN-overwritten spoofed metadata, and separate visitors without
-recording their real IP/location. The split alone is not proof that the previous
-live 404 is fixed; do not claim availability until the custom-domain endpoint
-passes those checks.
+recording their real IP/location on **every allowlisted domain**. Verify each
+provisioned site resolves the named origin to this updated package; if registrations
+are site-specific, establish the supported target before any additional upload.
+No package upload here changes `*.aem.page`/`*.aem.live` routing.
+Do not claim availability until the actual custom-domain endpoints pass
+these checks.
