@@ -139,7 +139,8 @@ test('unmanaged host metadata never enables geolocation', () => {
   for (const site of [
     'unmanaged.ynaka-adobe.com', 'suresmile.ynaka-adobe.com.evil.example',
     'main--suresmile--ynaka-adobe.aem.live', 'main--suresmile--ynaka-adobe.aem.page',
-    'granddesignrv.ynaka-adobe.com',
+    'granddesignrv.ynaka-adobe.com', '3m.ynaka-adobe.com',
+    'granddesignrv.xsc.demo.adobe.com.evil.example',
   ]) {
     const response = handleVisitorProfile(new Request(`https://${host}${path}`, {
       headers: { ...platform, 'x-suresmile-profile-host': site },

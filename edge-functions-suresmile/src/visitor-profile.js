@@ -1,6 +1,6 @@
 export const PROFILE_HOSTS = new Set([
   'suresmile.ynaka-adobe.com',
-  '3m.ynaka-adobe.com',
+  'granddesignrv.xsc.demo.adobe.com',
   'dupont.ynaka-adobe.com',
   'xsc-demo.ynaka-adobe.com',
   'fmc-dealer-communications.ynaka-adobe.com',

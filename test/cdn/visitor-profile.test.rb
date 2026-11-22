@@ -10,7 +10,7 @@ class VisitorProfileCdnTest < Minitest::Test
   PATH = '/api/visitor-profile'
   BASE = '4dad2e2'
   HOSTS = %w[
-    suresmile.ynaka-adobe.com 3m.ynaka-adobe.com dupont.ynaka-adobe.com
+    suresmile.ynaka-adobe.com granddesignrv.xsc.demo.adobe.com dupont.ynaka-adobe.com
     xsc-demo.ynaka-adobe.com fmc-dealer-communications.ynaka-adobe.com
     dealer-communications.ynaka-adobe.com parker.ynaka-adobe.com
     chevronlubricants.ynaka-adobe.com toyotafinancial.ynaka-adobe.com
@@ -50,6 +50,7 @@ class VisitorProfileCdnTest < Minitest::Test
       end
     end
     [HOST + '.evil.example', 'unmanaged.ynaka-adobe.com', 'granddesignrv.ynaka-adobe.com',
+     '3m.ynaka-adobe.com', 'granddesignrv.xsc.demo.adobe.com.evil.example',
      'main--suresmile--ynaka-adobe.aem.live', 'main--suresmile--ynaka-adobe.aem.page'].each do |host|
       refute matches?(route.fetch('when'), host, PATH)
     end
@@ -156,6 +157,7 @@ class VisitorProfileCdnTest < Minitest::Test
       node.each { |child| collect.call(child) } if node.is_a?(Array)
     end
     collect.call(inventory)
-    assert_equal domains.uniq.sort, HOSTS.sort
+    assert_equal ['3m.ynaka-adobe.com'], domains.uniq - HOSTS
+    assert_equal ['granddesignrv.xsc.demo.adobe.com'], HOSTS - domains.uniq
   end
 end

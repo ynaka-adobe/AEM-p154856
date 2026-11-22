@@ -100,13 +100,14 @@ The doctor API remains a separate origin route.
 
 ### Managed coverage and naming
 
-The allowlist is the complete inventory of exact demo hosts referenced by this
-repository's existing CDN rules, not a wildcard or a live Cloud Manager inventory:
+The allowlist covers the following exact managed custom domains. Deployment
+preflight verified their Cloud Manager mappings and the same named-function
+registry through each domain; this is not a wildcard:
 
 | Managed host | Existing routing retained outside the profile path |
 | --- | --- |
 | `suresmile.ynaka-adobe.com` | Doctor proxy and language redirects |
-| `3m.ynaka-adobe.com` | 3M web/order proxies and rewrites |
+| `granddesignrv.xsc.demo.adobe.com` | Grand Design RV EDS site |
 | `dupont.ynaka-adobe.com` | Homepage persona decisioning |
 | `xsc-demo.ynaka-adobe.com` | CUG/auth runtime, including `/auth/geo` |
 | `fmc-dealer-communications.ynaka-adobe.com` | Communications CUG/API runtime |
@@ -120,9 +121,15 @@ requesting-visitor endpoint does not require a login or expose auth/session data
 It does not disable authentication on any other path or replace `/auth/geo`.
 No frontend Insights, Analytics, telemetry, or consent UI is installed.
 
-Grand Design RV has no host entry in this repository, so it is **not** silently
-added. A verified custom domain managed by this CDN must be identified before
-extending the allowlist. `*.aem.page`, `*.aem.live`, and `*.aem.network` are
+Grand Design RV's actual managed domain is `granddesignrv.xsc.demo.adobe.com`,
+verified as domain mapping `1620652` in program `154856` with the same function
+registry as SureSmile. It is included without installing Insights or analytics;
+the guessed `granddesignrv.ynaka-adobe.com` is not included.
+`3m.ynaka-adobe.com` has existing unrelated CDN rules but no Cloud Manager
+domain mapping in this inventory, and its function registry could not be reached.
+Its existing proxy/rewrites are unchanged; profile routing is excluded until
+its provider registration and HTTPS reachability are verified.
+`*.aem.page`, `*.aem.live`, and `*.aem.network` are
 provider-controlled origins, not endpoints controlled by these CDN rules.
 Other providers, arbitrary websites, and unlisted `*.ynaka-adobe.com` hosts
 are outside this change; no broad CORS workaround is provided.
