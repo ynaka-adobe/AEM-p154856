@@ -3,7 +3,9 @@ import {
   b64urlEncode, randomString, sha256, signHS256, verifyHS256, verifyRS256,
 } from './jwt.js';
 import { subjectAttributes } from './abac.js';
-import { countryFrom, stateFrom, stringClaim } from './claims.js';
+import {
+  cityFrom, countryFrom, stateFrom, stringClaim,
+} from './claims.js';
 
 export const SESSION_COOKIE = 'cug_session';
 const TX_COOKIE = 'cug_tx';
@@ -177,12 +179,14 @@ export async function callback(request, env) {
   let groupsClaim = claims[claimName];
   const companyClaim = env.OKTA_COMPANY_CLAIM || 'company';
   const stateClaim = env.OKTA_STATE_CLAIM || 'state';
+  const cityClaim = env.OKTA_CITY_CLAIM || 'city';
   let country = countryFrom(claims, countryClaim);
   let company = stringClaim(claims, companyClaim);
   let state = stateFrom(claims, stateClaim);
+  let city = cityFrom(claims, cityClaim);
   // Okta can omit groups (and address) from the ID token in the code flow;
   // /userinfo has them.
-  if ((!Array.isArray(groupsClaim) || !country || !state) && accessToken && config.userinfo_endpoint) {
+  if ((!Array.isArray(groupsClaim) || !country || !state || !city) && accessToken && config.userinfo_endpoint) {
     try {
       const info = await fetch(config.userinfo_endpoint, {
         ...noCache(),
@@ -195,6 +199,7 @@ export async function callback(request, env) {
           if (!country) country = countryFrom(data, countryClaim);
           if (!company) company = stringClaim(data, companyClaim);
           if (!state) state = stateFrom(data, stateClaim);
+          if (!city) city = cityFrom(data, cityClaim);
         }
       }
     } catch (e) {
@@ -211,8 +216,9 @@ export async function callback(request, env) {
     country,
     // optional; abac.js falls back to the email domain when empty
     company,
-    // profile display only (state / region); '' when Okta has none
+    // profile display only (state / region, city); '' when Okta has none
     state,
+    city,
     exp: Math.floor(Date.now() / 1000) + ttl,
   }, env.SESSION_SECRET);
 
@@ -253,6 +259,7 @@ export async function me(request, env) {
       country: session.country || '',
       company: session.company || '',
       state: session.state || '',
+      city: session.city || '',
       attributes: [...subjectAttributes(session)],
       demos: session.demos,
     }

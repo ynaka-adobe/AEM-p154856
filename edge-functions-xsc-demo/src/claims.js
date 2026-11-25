@@ -27,3 +27,6 @@ export const countryFrom = (claims, claimName = 'country') => addressClaim(claim
 
 /** The user's state / region: a custom claim (default `state`), then `address.region`. */
 export const stateFrom = (claims, claimName = 'state') => addressClaim(claims, claimName, 'region');
+
+/** The user's city: a custom claim (default `city`), then `address.locality`. */
+export const cityFrom = (claims, claimName = 'city') => addressClaim(claims, claimName, 'locality');
