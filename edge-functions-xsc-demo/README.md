@@ -97,7 +97,7 @@ AEM sends as `x-aem-cug-groups`. `src/abac.js` evaluates them:
 - Country names/aliases (`USA`, `United States`, `Japan`, `JPN`) are recognised;
   use `country:XX` for others and `group:name` to force a group.
 - Guests (access codes) hold no attributes and fail closed.
-- `/auth/me` returns `country` and `attributes`. Tests: `npm test`.
+- `/auth/me` returns `groups`, `country`, `company`, `state` (`address.region`, '' when unknown; sessions from before this field return '') and `attributes`. Tests: `npm test`.
 
 ## Configuration
 
@@ -112,6 +112,7 @@ shared with the other functions. They are declared in `config-eds/edgeFunctions.
 | `XSC_OKTA_GROUPS_CLAIM` | config | optional, default `groups` |
 | `XSC_OKTA_COUNTRY_CLAIM` | config | optional, default `country`; falls back to `address.country` |
 | `XSC_OKTA_COMPANY_CLAIM` | config | optional, default `company`; falls back to the email domain |
+| `XSC_OKTA_STATE_CLAIM` | config | optional, default `state`; falls back to `address.region` (profile display only, not used for ABAC) |
 | `XSC_SESSION_TTL` | config | optional, seconds, default `28800` |
 | `XSC_ORIGIN_HOSTNAME` | config | optional, default `main--xsc-demo--ynaka-adobe.aem.live` |
 | `XSC_PUBLIC_ORIGIN` | config | optional, default `https://xsc-demo.ynaka-adobe.com` |

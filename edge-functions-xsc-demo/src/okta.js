@@ -3,6 +3,7 @@ import {
   b64urlEncode, randomString, sha256, signHS256, verifyHS256, verifyRS256,
 } from './jwt.js';
 import { subjectAttributes } from './abac.js';
+import { countryFrom, stateFrom, stringClaim } from './claims.js';
 
 export const SESSION_COOKIE = 'cug_session';
 const TX_COOKIE = 'cug_tx';
@@ -77,23 +78,6 @@ function callbackUrl(env, url) {
 /** Returns the signed-in user ({ sub, email, name, groups }) or null. */
 export async function getSession(request, env) {
   return verifyHS256(getCookie(request, SESSION_COOKIE), env.SESSION_SECRET);
-}
-
-const stringClaim = (claims, name) => (claims && typeof claims[name] === 'string'
-  ? claims[name].trim() : '');
-
-/**
- * The user's country for ABAC: a custom claim (default `country`) wins, then
- * the standard OIDC `address.country` (Okta fills it from the profile's
- * countryCode via the `address` scope). `locale` is deliberately ignored: it is
- * a language preference and Okta defaults it to en_US for everyone.
- */
-function countryFrom(claims, claimName) {
-  const custom = claims && claims[claimName];
-  if (typeof custom === 'string' && custom.trim()) return custom.trim();
-  const addr = claims && claims.address;
-  if (addr && typeof addr.country === 'string' && addr.country.trim()) return addr.country.trim();
-  return '';
 }
 
 export async function login(request, env) {
@@ -192,11 +176,13 @@ export async function callback(request, env) {
   const countryClaim = env.OKTA_COUNTRY_CLAIM || 'country';
   let groupsClaim = claims[claimName];
   const companyClaim = env.OKTA_COMPANY_CLAIM || 'company';
+  const stateClaim = env.OKTA_STATE_CLAIM || 'state';
   let country = countryFrom(claims, countryClaim);
   let company = stringClaim(claims, companyClaim);
+  let state = stateFrom(claims, stateClaim);
   // Okta can omit groups (and address) from the ID token in the code flow;
   // /userinfo has them.
-  if ((!Array.isArray(groupsClaim) || !country) && accessToken && config.userinfo_endpoint) {
+  if ((!Array.isArray(groupsClaim) || !country || !state) && accessToken && config.userinfo_endpoint) {
     try {
       const info = await fetch(config.userinfo_endpoint, {
         ...noCache(),
@@ -208,6 +194,7 @@ export async function callback(request, env) {
           if (!Array.isArray(groupsClaim)) groupsClaim = data[claimName];
           if (!country) country = countryFrom(data, countryClaim);
           if (!company) company = stringClaim(data, companyClaim);
+          if (!state) state = stateFrom(data, stateClaim);
         }
       }
     } catch (e) {
@@ -224,6 +211,8 @@ export async function callback(request, env) {
     country,
     // optional; abac.js falls back to the email domain when empty
     company,
+    // profile display only (state / region); '' when Okta has none
+    state,
     exp: Math.floor(Date.now() / 1000) + ttl,
   }, env.SESSION_SECRET);
 
@@ -263,6 +252,7 @@ export async function me(request, env) {
       groups: session.guest ? (session.demos || []).map((d) => d.customer) : session.groups,
       country: session.country || '',
       company: session.company || '',
+      state: session.state || '',
       attributes: [...subjectAttributes(session)],
       demos: session.demos,
     }
