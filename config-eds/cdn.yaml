@@ -112,6 +112,13 @@ data:
           allOf:
             - { reqProperty: domain, equals: "dealer-communications.ynaka-adobe.com" }
         action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
+      # hitachienergy reuses the same function for server-side Okta sign-in
+      # (/auth/*); src/sites.js wildcard maps it to main--hitachienergy--ynaka-adobe.aem.live.
+      - name: route-hitachienergy-cug
+        when:
+          allOf:
+            - { reqProperty: domain, equals: "hitachienergy.ynaka-adobe.com" }
+        action: { type: selectAemOrigin, originName: edgefunction-xsc-demo-cug, skipCache: true }
       # Parker product pages (series + nested SKU pages) are built on a
       # separate EDS site (ynaka-adobe/parker), not this AEM instance.
       # Scoped to parker.ynaka-adobe.com only, so it cannot match any

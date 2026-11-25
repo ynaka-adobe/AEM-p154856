@@ -93,3 +93,13 @@ test('xsc-demo switches to its own Okta app only when both demo keys are set', (
   assert.equal(env.OKTA_CLIENT_SECRET, 's2');
   assert.equal(env.OKTA_LOCAL_LOGOUT, true);
 });
+
+test('hitachienergy host resolves through the wildcard with no guest codes or API', () => {
+  const site = siteForHost('hitachienergy.ynaka-adobe.com');
+  assert.equal(site.ORIGIN_HOSTNAME, 'main--hitachienergy--ynaka-adobe.aem.live');
+  assert.equal(site.PUBLIC_ORIGIN, 'https://hitachienergy.ynaka-adobe.com');
+  assert.equal(site.guest, null);
+  assert.equal(site.api, null);
+  assert.equal(authRouteAllowed('/auth/login', site), true);
+  assert.equal(authRouteAllowed('/auth/code', site), false);
+});
