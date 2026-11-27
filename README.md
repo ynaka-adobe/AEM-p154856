@@ -51,6 +51,15 @@ environment `1944736` (Publish:
 approval. `config.publish` also applies to other Publish environments using
 this code. Local checks do not establish deployment success.
 
+The user confirmed the full-stack pipeline source as
+`https://github.com/ynaka-adobe/AEM-p154856`, branch `main`, using Smart Build
+Strategy. Make the approved configuration commit available on that branch
+before running the pipeline; Smart Build does not consume an unpushed local
+branch. There is no configured Adobe Git remote in this checkout. Confirm
+the actual pipeline ID and target environment in an authorized Cloud Manager
+session before execution; the source confirmation is not merge or deployment
+approval.
+
 The separate Hitachi EDS frontend must initialize its form submission base URL
 to that Publish origin for workflow submissions: import `setSubmitBaseUrl` from
 `blocks/form/constant.js` and call it before any form decoration with
