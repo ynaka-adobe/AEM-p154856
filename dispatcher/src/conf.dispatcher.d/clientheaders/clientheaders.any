@@ -5,3 +5,9 @@
 #
 
 $include "./default_clientheaders.any"
+
+# Let Publish evaluate EDS Forms CORS and receive the submission hostname.
+"Origin"
+"Access-Control-Request-Method"
+"Access-Control-Request-Headers"
+"x-adobe-form-hostname"

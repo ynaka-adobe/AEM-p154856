@@ -17,6 +17,73 @@ The main parts of the template are:
 * all: a single content package that embeds all of the compiled modules (bundles and content packages) including any vendor dependencies
 * analyse: this module runs analysis on the project which provides additional validation for deploying into AEMaaCS
 
+## EDS Adaptive Form submissions
+
+Publish allows Forms requests from the Toyota Financial and Hitachi Energy
+custom domains and their branch origins on `*.aem.page` and `*.aem.live`.
+The `forms-eds` CORS policy remains scoped to `/adobe/forms/.*` and
+`/content/forms/.*`, without cross-origin credentials.
+
+The Sling ReferrerFilter is a singleton: configure
+`org.apache.sling.security.impl.ReferrerFilter.cfg.json`, not a factory-suffixed
+filename. Its regular expressions match `scheme://host:port`, so HTTPS branch
+origins include `:443`, unlike the CORS origin expressions. The merged
+configuration retains the existing Okta and localhost hosts, requires a
+nonempty referrer, and keeps the existing filtered methods.
+Dispatcher forwards CORS request headers and `x-adobe-form-hostname` to Publish.
+The included default `/0062` filter already allows `GET|POST|OPTIONS` for
+`/adobe/forms/*`; neither immutable defaults nor the default vhost need edits.
+
+Focused configuration checks:
+
+```sh
+ruby test/forms/eds-publish.test.rb
+mvn -pl ui.config,dispatcher -am verify
+```
+
+Deploy these OSGi and Dispatcher changes through the Cloud Manager **full-stack
+AEM code pipeline**, not the `/config-eds` configuration pipeline. The `all`
+package embeds `ui.config`; its `cloudManagerTarget=none` means the config
+package is not a standalone deployment target. Before any merge or deployment,
+confirm the pipeline's repository and source branch, program `154856`, and
+environment `1944736` (Publish:
+`https://publish-p154856-e1944736.adobeaemcloud.com`), and obtain deployment
+approval. `config.publish` also applies to other Publish environments using
+this code. Local checks do not establish deployment success.
+
+The user confirmed the full-stack pipeline source as
+`https://github.com/ynaka-adobe/AEM-p154856`, branch `main`, using Smart Build
+Strategy. Make the approved configuration commit available on that branch
+before running the pipeline; Smart Build does not consume an unpushed local
+branch. There is no configured Adobe Git remote in this checkout. Confirm
+the actual pipeline ID and target environment in an authorized Cloud Manager
+session before execution; the source confirmation is not merge or deployment
+approval.
+
+The separate Hitachi EDS frontend must initialize its form submission base URL
+to that Publish origin for workflow submissions: import `setSubmitBaseUrl` from
+`blocks/form/constant.js` and call it before any form decoration with
+`https://publish-p154856-e1944736.adobeaemcloud.com` (no trailing slash).
+`setupForm()` then prefixes the exported `/adobe/forms/af/submit/<base64-form-path>`
+action for `aemworkflowsubmit`; spreadsheet/AEP submissions keep their dedicated
+service route. On November 27, 2026, read-only browser inspection of
+`/forms/revised-po-order-change-request` found an empty base URL and a relative
+workflow model action, so the frontend still needed that initialization.
+With an absolute Publish
+target, the request does not traverse the Hitachi custom-domain CUG route;
+no `/config-eds/cdn.yaml` routing exception is needed. Keep the shared Okta
+route unchanged. Form publication and the `po_order_change_order` workflow
+setup are separate, author-managed prerequisites; this configuration does not
+change either.
+
+After deployment, verify the effective singleton ReferrerFilter and Forms CORS
+policy in the Cloud Manager Developer Console and send an OPTIONS request to
+the actual `/adobe/forms/af/submit/<base64-form-path>` endpoint with the EDS
+Origin and requested POST headers. Require the matching
+`Access-Control-Allow-Origin`, POST method, and requested headers; a 200 without
+CORS headers is not a successful browser preflight. Coordinate a real
+submission only after the form/workflow owner is ready.
+
 ## How to build
 
 To build all the modules run in the project root directory the following command with Maven 3:
